@@ -8,84 +8,120 @@ export default function Home() {
 
   return (
     <main>
-      {/* Hero Banner */}
-      <section style={{
-        background: 'linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)',
-        backgroundImage: 'url(https://via.placeholder.com/1600x600/8B4513/FFFFFF?text=BOGO+40%25+OFF)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        color: '#fff',
-        position: 'relative',
-        padding: '80px 20px',
-        textAlign: 'center'
-      }}>
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.3)'
-        }} />
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <p style={{
-            fontSize: '14px',
-            textTransform: 'uppercase',
-            letterSpacing: '2px',
-            marginBottom: '10px'
-          }}>
-            Limited Time Only
-          </p>
-          <h1 style={{
-            fontSize: '48px',
-            fontWeight: 'bold',
-            marginBottom: '15px',
-            textTransform: 'uppercase'
-          }}>
-            BOGO 40% off select styles
-          </h1>
-          <p style={{ fontSize: '16px', marginBottom: '30px' }}>
-            Discount applied at cart
-          </p>
-          <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link to="/collection/womens" className="btn-primary">Shop Women</Link>
-            <Link to="/collection/mens" className="btn-primary">Shop Men</Link>
-            <Link to="/collection/bags" className="btn-primary">Shop Bags</Link>
+      {/* Stranger Things Collection */}
+      <section style={{ padding: '0', margin: '0' }}>
+        {/* Header Section - Title Left, Buttons Right */}
+        <div style={{ 
+          maxWidth: '100%', 
+          margin: '0 auto',
+          padding: '80px 80px 40px 80px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          gap: '60px'
+        }}>
+          <div style={{ flex: 1, maxWidth: '700px' }}>
+            <h2 style={{ 
+              fontSize: '60px', 
+              marginBottom: '20px',
+              fontWeight: '500',
+              fontFamily: 'Jost, sans-serif',
+              letterSpacing: '0.05px',
+              lineHeight: '64px',
+              whiteSpace: 'nowrap',
+              color: '#000'
+            }}>
+              Stranger Things x ALDO
+            </h2>
+            <p style={{ 
+              fontSize: '18px', 
+              color: '#000', 
+              lineHeight: '26px',
+              maxWidth: '700px',
+              fontWeight: '400',
+              letterSpacing: '0.1px',
+              margin: '0',
+              whiteSpace: 'nowrap',
+              fontFamily: 'Jost, sans-serif'
+            }}>
+              Step into a new dimension of style with our out of this world limited-edition collection.
+            </p>
           </div>
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: '12px',
+            minWidth: '480px',
+            alignSelf: 'flex-start'
+          }}>
+            <Link 
+              to="/collection/womens-stranger-things" 
+              style={{
+                padding: '16px 80px',
+                border: '1px solid #000',
+                backgroundColor: '#fff',
+                color: '#000',
+                textAlign: 'center',
+                textDecoration: 'none',
+                fontSize: '14px',
+                fontWeight: '500',
+                fontFamily: 'Jost, sans-serif',
+                transition: 'all 0.3s ease',
+                letterSpacing: '0.5px'
+              }}
+            >
+              Shop Women
+            </Link>
+            <Link 
+              to="/collection/mens-stranger-things" 
+              style={{
+                padding: '16px 80px',
+                border: '1px solid #000',
+                backgroundColor: '#fff',
+                color: '#000',
+                textAlign: 'center',
+                textDecoration: 'none',
+                fontSize: '14px',
+                fontWeight: '500',
+                fontFamily: 'Jost, sans-serif',
+                transition: 'all 0.3s ease',
+                letterSpacing: '0.5px'
+              }}
+            >
+              Shop Men
+            </Link>
+          </div>
+        </div>
+
+        {/* Video Section - FULL WIDTH */}
+        <div style={{ 
+          width: '100%',
+          padding: '0 80px',
+          margin: '0'
+        }}>
+          <video 
+            playsInline
+            autoPlay 
+            loop 
+            muted 
+            preload="metadata"
+            poster="https://www.aldoshoes.com/cdn/shop/files/preview_images/bfe8a34c4df34682b2bd71f6ed429f55.thumbnail.0000000000.jpg?v=1761331014&width=3840"
+            style={{ 
+              width: '100%', 
+              height: 'auto',
+              display: 'block'
+            }}
+            aria-label="Video of Stranger Things x ALDO collection"
+          >
+            <source src="https://www.aldoshoes.com/cdn/shop/videos/c/vp/bfe8a34c4df34682b2bd71f6ed429f55/bfe8a34c4df34682b2bd71f6ed429f55.HD-1080p-4.8Mbps-60831789.mp4?v=0" type="video/mp4" />
+            <img 
+              alt="Video of Stranger Things x ALDO collection" 
+              src="https://www.aldoshoes.com/cdn/shop/files/preview_images/bfe8a34c4df34682b2bd71f6ed429f55.thumbnail.0000000000_small.jpg?v=1761331014"
+            />
+          </video>
         </div>
       </section>
 
-      {/* Stranger Things Collection */}
-      <section style={{ padding: '60px 20px' }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '40px',
-            alignItems: 'center'
-          }} className="collection-content">
-            <div>
-              <h2 style={{ fontSize: '36px', marginBottom: '15px' }}>Stranger Things x ALDO</h2>
-              <p style={{ fontSize: '16px', color: '#666', marginBottom: '25px' }}>
-                Step into a new dimension of style with our out of this world limited-edition collection.
-              </p>
-              <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-                <Link to="/collection/womens-stranger-things" className="btn-secondary">Shop Women</Link>
-                <Link to="/collection/mens-stranger-things" className="btn-secondary">Shop Men</Link>
-                <Link to="/collection/mens-stranger-things" className="btn-secondary">Shop Men</Link>
-              </div>
-              
-            </div>
-            <div>
-              <img
-                src="https://via.placeholder.com/600x400/8B0000/FFFFFF?text=Stranger+Things+x+ALDO"
-                alt="Stranger Things Collection"
-                style={{ width: '100%', borderRadius: '4px' }}
-              />
-            </div>
-          </div>
-        </div>
-      </section>
       {/* AI banner section - full width clickable banner */}
       <section style={{ width: '100%', backgroundColor: '#f5f5f5' }}>
         <Link
