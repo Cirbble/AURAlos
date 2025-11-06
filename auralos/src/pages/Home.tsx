@@ -89,7 +89,7 @@ export default function Home() {
       {/* AI banner section - full width clickable banner */}
       <section style={{ width: '100%', backgroundColor: '#f5f5f5' }}>
         <Link
-          to="/collection/mens-stranger-things"
+          to="/ai-collection"
           className="btn-secondary"
           style={{
             display: 'block',
