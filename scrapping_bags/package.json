@@ -1,0 +1,24 @@
+{
+  "name": "aldo-scraper-handbags",
+  "version": "1.0.0",
+  "description": "Puppeteer scraper for Aldo women's handbags website",
+  "main": "puppet_scrapper_handbags.js",
+  "scripts": {
+    "start": "node puppet_scrapper_handbags.js",
+    "clean": "node aldo_scraper_clean_handbags.js",
+    "install-deps": "npm install puppeteer"
+  },
+  "dependencies": {
+    "puppeteer": "^21.11.0"
+  },
+  "keywords": [
+    "scraping",
+    "puppeteer",
+    "aldo",
+    "handbags",
+    "bags",
+    "women"
+  ],
+  "author": "",
+  "license": "MIT"
+}
