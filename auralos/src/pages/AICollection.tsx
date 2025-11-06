@@ -136,31 +136,62 @@ export default function AICollection() {
                     marginBottom: '10px'
                   }}
                 />
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedImage(null);
-                    setError(null);
-                  }}
-                  style={{
-                    position: 'absolute',
-                    top: '-10px',
-                    right: '-10px',
-                    background: '#EF4444',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '50%',
-                    width: '24px',
-                    height: '24px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '14px'
-                  }}
-                >
-                  ×
-                </button>
+                <div style={{
+                  position: 'absolute',
+                  top: '-10px',
+                  right: '-10px',
+                  display: 'flex',
+                  gap: '8px'
+                }}>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedImage(null);
+                      setError(null);
+                    }}
+                    style={{
+                      background: '#EF4444',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: '24px',
+                      height: '24px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '14px'
+                    }}
+                    title="Remove image"
+                  >
+                    ×
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedImage(null);
+                      setError('Upload declined');
+                      // Optional: Add any decline-specific logic here
+                      setTimeout(() => setError(null), 3000); // Clear message after 3 seconds
+                    }}
+                    style={{
+                      background: '#4B5563',
+                      color: 'white',
+                      border: 'none',
+                      padding: '4px 12px',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      fontWeight: 500,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    title="Decline upload"
+                  >
+                    Decline
+                  </button>
+                </div>
                 {isLoading && (
                   <div style={{
                     position: 'absolute',
@@ -229,6 +260,19 @@ export default function AICollection() {
             />
           </div>
           
+          {error && (
+            <p style={{
+              fontSize: '14px',
+              color: '#EF4444',
+              marginTop: '15px',
+              padding: '8px 12px',
+              backgroundColor: '#FEF2F2',
+              borderRadius: '4px',
+              display: 'inline-block'
+            }}>
+              {error}
+            </p>
+          )}
           <p style={{
             fontSize: '14px',
             color: '#6B7280',
