@@ -137,6 +137,7 @@ export default function Header() {
               <li><Link to="/collection/animal-print" style={linkStyle}>Animal Print</Link></li>
               <li><Link to="/collection/bordeaux" style={linkStyle}>Bordeaux</Link></li>
               <li><Link to="/collection/suede" style={linkStyle}>Suede</Link></li>
+              <li><Link to="/ai-collection" style={linkStyle}>Discover Ai!</Link></li>
             </ul>
           </nav>
         </div>
