@@ -1,0 +1,55 @@
+{
+  "mappings": {
+    "properties": {
+      "image_path": {
+        "type": "keyword"
+      },
+      "image_name": {
+        "type": "text"
+      },
+      "image_hash": {
+        "type": "keyword"
+      },
+      "product_name": {
+        "type": "text"
+      },
+      "image_number": {
+        "type": "integer"
+      },
+      "vector": {
+        "type": "knn_vector",
+        "dimension": 512,
+        "method": {
+          "name": "hnsw",
+          "space_type": "cosinesimil",
+          "engine": "lucene"
+        }
+      },
+      "metadata": {
+        "properties": {
+          "file_size": {
+            "type": "long"
+          },
+          "file_extension": {
+            "type": "keyword"
+          },
+          "created_at": {
+            "type": "date"
+          },
+          "modified_at": {
+            "type": "date"
+          },
+          "processed_at": {
+            "type": "date"
+          }
+        }
+      }
+    }
+  },
+  "settings": {
+    "index": {
+      "knn": true,
+      "knn.algo_param.ef_search": 100
+    }
+  }
+}

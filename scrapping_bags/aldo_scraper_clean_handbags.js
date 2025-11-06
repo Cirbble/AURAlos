@@ -40,6 +40,11 @@ async function scrapeAldoHandbags() {
 
         console.log(`🎯 Found ${productLinks.length} total product links across all pages`);
 
+        // Save all product links to a file
+        const linksFile = path.join(__dirname, 'scrapping_links.json');
+        fs.writeFileSync(linksFile, JSON.stringify(productLinks, null, 2));
+        console.log(`💾 Saved ${productLinks.length} product links to ${linksFile}`);
+
         if (productLinks.length === 0) {
             console.log('❌ No product links found');
             await page.screenshot({ path: 'debug_collection_page.png', fullPage: true });
@@ -231,25 +236,212 @@ async function scrapeAldoHandbags() {
                         }
                     }
 
-                    // Try to get product description
+                    // Get product description
                     let description = null;
-                    const descriptionSelectors = [
-                        '.product-description',
-                        '.product-details',
-                        '.description',
-                        '[data-testid="product-description"]',
-                        '.pdp-description'
-                    ];
+                    let productDetails = null;
                     
-                    for (const selector of descriptionSelectors) {
-                        const element = document.querySelector(selector);
-                        if (element && element.textContent?.trim()) {
-                            description = cleanText(element);
-                            if (description && description.length > 200) {
-                                description = description.substring(0, 200) + '...';
+                    // First, try to get structured product details from accordion
+                    const accordionElement = document.querySelector('.shared-accordion__description');
+                    if (accordionElement) {
+                        const materials = [];
+                        const features = [];
+                        
+                        // Alternative approach since :has() might not work
+                        const infoLists = accordionElement.querySelectorAll('.product-details-accordion__info-list');
+                        infoLists.forEach(list => {
+                            const title = list.querySelector('.product-details-accordion__info-list-title');
+                            const items = list.querySelectorAll('.product-details-accordion__info-list-items li');
+                            
+                            if (title && items.length > 0) {
+                                const titleText = cleanText(title).toLowerCase();
+                                const itemTexts = Array.from(items).map(item => cleanText(item)).filter(Boolean);
+                                
+                                if (titleText.includes('material')) {
+                                    materials.push(...itemTexts);
+                                } else if (titleText.includes('feature')) {
+                                    features.push(...itemTexts);
+                                }
                             }
-                            break;
+                        });
+                        
+                        // Build structured description
+                        if (materials.length > 0 || features.length > 0) {
+                            let structuredDesc = '';
+                            if (materials.length > 0) {
+                                structuredDesc += 'Materials: ' + materials.join(', ') + '. ';
+                            }
+                            if (features.length > 0) {
+                                structuredDesc += 'Features: ' + features.join(', ') + '.';
+                            }
+                            productDetails = structuredDesc.trim();
                         }
+                    }
+                    
+                    // Try to get product description specifically from product details accordion
+                    // Look for description within the same accordion structure
+                    if (accordionElement) {
+                        // Look for description or product info sections within the accordion
+                        const descriptionSections = accordionElement.querySelectorAll('.product-details-accordion__info-list');
+                        descriptionSections.forEach(section => {
+                            const title = section.querySelector('.product-details-accordion__info-list-title');
+                            if (title) {
+                                const titleText = cleanText(title).toLowerCase();
+                                // Look for description, details, or product info sections
+                                if (titleText.includes('description') || 
+                                    titleText.includes('details') || 
+                                    titleText.includes('product info') ||
+                                    titleText.includes('about')) {
+                                    
+                                    const content = section.querySelector('.product-details-accordion__info-list-items');
+                                    if (content) {
+                                        const text = cleanText(content);
+                                        if (text && text.length > 20 && text.length < 1000 && !description) {
+                                            description = text;
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                    
+                    // If no description found in accordion, look for specific product description elements
+                    // but be more restrictive to avoid promotional content
+                    if (!description) {
+                        const restrictedDescriptionSelectors = [
+                            '.product-details .description',
+                            '.product-info .product-description',
+                            '[data-testid="product-description"]',
+                            '.pdp-product-description',
+                            '.product-detail-description'
+                        ];
+                        
+                        for (const selector of restrictedDescriptionSelectors) {
+                            const element = document.querySelector(selector);
+                            if (element) {
+                                const text = cleanText(element);
+                                if (text && text.length > 20 && text.length < 1000) {
+                                    description = text;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // If no description found with specific selectors, look for paragraphs near product info
+                    if (!description) {
+                        const paragraphs = Array.from(document.querySelectorAll('p'))
+                            .map(p => cleanText(p))
+                            .filter(text => text && 
+                                          text.length > 50 && 
+                                          text.length < 1000 &&
+                                          !text.includes('$') &&
+                                          !text.toLowerCase().includes('shipping') &&
+                                          !text.toLowerCase().includes('return') &&
+                                          !text.toLowerCase().includes('size guide') &&
+                                          !text.toLowerCase().includes('size conversion') &&
+                                          !text.toLowerCase().includes('general guideline') &&
+                                          !text.toLowerCase().includes('accurate fit') &&
+                                          !text.toLowerCase().includes('fit guide') &&
+                                          !text.toLowerCase().includes('sizing chart') &&
+                                          !text.toLowerCase().includes('measurement') &&
+                                          !text.toLowerCase().includes('regular rings are designed') &&
+                                          !text.toLowerCase().includes('midi rings are') &&
+                                          !text.toLowerCase().includes('worn at the base') &&
+                                          !text.toLowerCase().includes('ring sizing') &&
+                                          !text.toLowerCase().includes('jewelry sizing') &&
+                                          !text.toLowerCase().includes('newsletter') &&
+                                          !text.toLowerCase().includes('cookie') &&
+                                          !text.toLowerCase().includes('accept') &&
+                                          !text.toLowerCase().includes('privacy') &&
+                                          !text.toLowerCase().includes('terms') &&
+                                          !text.toLowerCase().includes('policy') &&
+                                          !text.toLowerCase().includes('subscribe') &&
+                                          !text.toLowerCase().includes('email') &&
+                                          !text.toLowerCase().includes('sign up') &&
+                                          !text.toLowerCase().includes('account') &&
+                                          !text.toLowerCase().includes('login') &&
+                                          !text.toLowerCase().includes('register') &&
+                                          // French content filtering
+                                          !text.toLowerCase().includes('ces témoins sont nécessaires') &&
+                                          !text.toLowerCase().includes('témoins sont nécessaires') &&
+                                          !text.toLowerCase().includes('fonctionnement du site web') &&
+                                          !text.toLowerCase().includes('supportent ses performances') &&
+                                          !text.toLowerCase().includes('nous utilisons des témoins') &&
+                                          !text.toLowerCase().includes('accepter les témoins') &&
+                                          !text.toLowerCase().includes('politique de confidentialité') &&
+                                          !text.toLowerCase().includes('conditions d\'utilisation') &&
+                                          !text.toLowerCase().includes('en continuant') &&
+                                          !text.toLowerCase().includes('ce site web') &&
+                                          !text.toLowerCase().includes('votre navigateur'));
+                        
+                        if (paragraphs.length > 0) {
+                            // Take the longest paragraph as it's likely the description
+                            description = paragraphs.reduce((longest, current) => 
+                                current.length > longest.length ? current : longest
+                            );
+                        }
+                    }
+                    
+                    // Final validation - reject descriptions that are clearly not product descriptions
+                    if (description) {
+                        const descLower = description.toLowerCase();
+                        if (descLower.includes('when you accept') ||
+                            descLower.includes('we use cookies') ||
+                            descLower.includes('by continuing') ||
+                            descLower.includes('this website') ||
+                            descLower.includes('your browser') ||
+                            descLower.includes('click here') ||
+                            descLower.includes('learn more') ||
+                            descLower.includes('find out more') ||
+                            descLower.includes('size conversion is a general guideline') ||
+                            descLower.includes('general guideline and may not be') ||
+                            descLower.includes('for a more accurate fit') ||
+                            descLower.includes('sizing information') ||
+                            descLower.includes('fit may vary') ||
+                            descLower.includes('our regular rings are designed') ||
+                            descLower.includes('midi rings are smalle') ||
+                            descLower.includes('worn at the base of your fingers') ||
+                            descLower.includes('whereas midi rings') ||
+                            descLower.includes('limited-edition stranger things') ||
+                            descLower.includes('pillow walk') ||
+                            descLower.includes('dual density foam') ||
+                            descLower.includes('you\'ll have to feel it') ||
+                            descLower.includes('feel it to believe it') ||
+                            descLower.includes('our limited-edition') ||
+                            descLower.startsWith('accept') ||
+                            descLower.startsWith('by using') ||
+                            descLower.startsWith('this site') ||
+                            descLower.startsWith('the size conversion') ||
+                            descLower.startsWith('size conversion') ||
+                            descLower.startsWith('our regular rings') ||
+                            descLower.startsWith('our limited-edition') ||
+                            // French content filtering
+                            descLower.includes('ces témoins sont nécessaires') ||
+                            descLower.includes('témoins sont nécessaires') ||
+                            descLower.includes('fonctionnement du site web') ||
+                            descLower.includes('supportent ses performances') ||
+                            descLower.includes('ils ne pe') ||
+                            descLower.includes('nous utilisons des témoins') ||
+                            descLower.includes('accepter les témoins') ||
+                            descLower.includes('politique de confidentialité') ||
+                            descLower.includes('conditions d\'utilisation') ||
+                            descLower.includes('en continuant') ||
+                            descLower.includes('ce site web') ||
+                            descLower.includes('votre navigateur') ||
+                            descLower.startsWith('ces témoins') ||
+                            descLower.startsWith('nous utilisons')) {
+                            description = null;
+                        }
+                    }
+
+                    // Combine descriptions
+                    let finalDescription = null;
+                    if (productDetails && description) {
+                        finalDescription = description + ' | ' + productDetails;
+                    } else if (productDetails) {
+                        finalDescription = productDetails;
+                    } else if (description) {
+                        finalDescription = description;
                     }
 
                     return {
@@ -260,7 +452,8 @@ async function scrapeAldoHandbags() {
                         bagType: bagType,
                         dimensions: dimensions,
                         material: material,
-                        description: description,
+                        description: finalDescription,
+                        productDetails: productDetails,
                         url: window.location.href
                     };
                 });
@@ -274,6 +467,7 @@ async function scrapeAldoHandbags() {
 
                 console.log(`Product: ${productData.name || 'Unknown'}`);
                 console.log(`Price: ${productData.price || 'No price found'}`);
+                console.log(`Description: ${productData.description ? `${productData.description.substring(0, 100)}...` : 'No description found'}`);
                 console.log(`Bag Type: ${productData.bagType || 'No type found'}`);
                 console.log(`Material: ${productData.material || 'No material found'}`);
                 console.log(`Images: ${productData.images.length}`);
@@ -309,6 +503,7 @@ async function scrapeAldoHandbags() {
                         dimensions: productData.dimensions,
                         material: productData.material,
                         description: productData.description,
+                        productDetails: productData.productDetails,
                         downloadedImages: downloadedImages
                     });
 
@@ -346,6 +541,7 @@ async function scrapeAldoHandbags() {
         console.log(`👜 Products with bag type: ${products.filter(p => p.bagType).length}`);
         console.log(`📏 Products with dimensions: ${products.filter(p => p.dimensions).length}`);
         console.log(`🧵 Products with material info: ${products.filter(p => p.material).length}`);
+        console.log(`📝 Products with descriptions: ${products.filter(p => p.description).length}`);
         
         // Show bag types found
         const bagTypes = [...new Set(products.map(p => p.bagType).filter(Boolean))];

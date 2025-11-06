@@ -1,0 +1,97 @@
+{
+  "product_name": "lionel",
+  "image_count": 6,
+  "images": [
+    {
+      "image_path": "images/lionel_1.jpg",
+      "image_name": "lionel_1.jpg",
+      "image_hash": "ddf7072887f34f25223b268662788c39",
+      "product_name": "lionel",
+      "image_number": 1,
+      "vector": null,
+      "metadata": {
+        "file_size": 58061,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:34:42.523Z",
+        "modified_at": "2025-11-06T18:10:14.686Z",
+        "processed_at": "2025-11-06T21:53:14.427Z"
+      }
+    },
+    {
+      "image_path": "images/lionel_2.jpg",
+      "image_name": "lionel_2.jpg",
+      "image_hash": "54659a448efb782fe2de7916d0530fe0",
+      "product_name": "lionel",
+      "image_number": 2,
+      "vector": null,
+      "metadata": {
+        "file_size": 47754,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:34:42.631Z",
+        "modified_at": "2025-11-06T18:10:14.713Z",
+        "processed_at": "2025-11-06T21:53:14.430Z"
+      }
+    },
+    {
+      "image_path": "images/lionel_3.jpg",
+      "image_name": "lionel_3.jpg",
+      "image_hash": "3b67093d8d3b95e9b9d0b20a62adc02e",
+      "product_name": "lionel",
+      "image_number": 3,
+      "vector": null,
+      "metadata": {
+        "file_size": 86362,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:34:42.723Z",
+        "modified_at": "2025-11-06T18:10:14.758Z",
+        "processed_at": "2025-11-06T21:53:14.432Z"
+      }
+    },
+    {
+      "image_path": "images/lionel_4.jpg",
+      "image_name": "lionel_4.jpg",
+      "image_hash": "824e236bafaba6c48466ed9d1c4eca48",
+      "product_name": "lionel",
+      "image_number": 4,
+      "vector": null,
+      "metadata": {
+        "file_size": 58556,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:34:42.798Z",
+        "modified_at": "2025-11-06T18:10:14.788Z",
+        "processed_at": "2025-11-06T21:53:14.435Z"
+      }
+    },
+    {
+      "image_path": "images/lionel_5.jpg",
+      "image_name": "lionel_5.jpg",
+      "image_hash": "1899eab304e927c1b411ffb9a0d9e6f5",
+      "product_name": "lionel",
+      "image_number": 5,
+      "vector": null,
+      "metadata": {
+        "file_size": 296594,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:34:42.864Z",
+        "modified_at": "2025-11-06T18:10:14.851Z",
+        "processed_at": "2025-11-06T21:53:14.439Z"
+      }
+    },
+    {
+      "image_path": "images/lionel_6.jpg",
+      "image_name": "lionel_6.jpg",
+      "image_hash": "d667a019cc8f457858bed94fc838612f",
+      "product_name": "lionel",
+      "image_number": 6,
+      "vector": null,
+      "metadata": {
+        "file_size": 273780,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:34:43.364Z",
+        "modified_at": "2025-11-06T18:10:14.911Z",
+        "processed_at": "2025-11-06T21:53:14.607Z"
+      }
+    }
+  ],
+  "created_at": "2025-11-06T21:53:17.291Z"
+}

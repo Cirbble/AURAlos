@@ -1,0 +1,97 @@
+{
+  "product_name": "thevoid",
+  "image_count": 6,
+  "images": [
+    {
+      "image_path": "images/thevoid_1.jpg",
+      "image_name": "thevoid_1.jpg",
+      "image_hash": "7a763371fda4850763ad8da496012a2c",
+      "product_name": "thevoid",
+      "image_number": 1,
+      "vector": null,
+      "metadata": {
+        "file_size": 94375,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:17:10.404Z",
+        "modified_at": "2025-11-06T18:01:10.765Z",
+        "processed_at": "2025-11-06T21:53:14.971Z"
+      }
+    },
+    {
+      "image_path": "images/thevoid_2.jpg",
+      "image_name": "thevoid_2.jpg",
+      "image_hash": "580611d33efcbf526085069c34125601",
+      "product_name": "thevoid",
+      "image_number": 2,
+      "vector": null,
+      "metadata": {
+        "file_size": 366477,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:17:10.512Z",
+        "modified_at": "2025-11-06T18:01:11.154Z",
+        "processed_at": "2025-11-06T21:53:14.975Z"
+      }
+    },
+    {
+      "image_path": "images/thevoid_3.jpg",
+      "image_name": "thevoid_3.jpg",
+      "image_hash": "cb9c7382c042ba0b053fee7f877dc880",
+      "product_name": "thevoid",
+      "image_number": 3,
+      "vector": null,
+      "metadata": {
+        "file_size": 110256,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:17:10.629Z",
+        "modified_at": "2025-11-06T18:01:11.482Z",
+        "processed_at": "2025-11-06T21:53:15.164Z"
+      }
+    },
+    {
+      "image_path": "images/thevoid_4.jpg",
+      "image_name": "thevoid_4.jpg",
+      "image_hash": "c45185d580e2f25d33cb25e9a20edd35",
+      "product_name": "thevoid",
+      "image_number": 4,
+      "vector": null,
+      "metadata": {
+        "file_size": 155097,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:17:10.707Z",
+        "modified_at": "2025-11-06T18:01:11.596Z",
+        "processed_at": "2025-11-06T21:53:15.168Z"
+      }
+    },
+    {
+      "image_path": "images/thevoid_5.jpg",
+      "image_name": "thevoid_5.jpg",
+      "image_hash": "0a2c42e7190d29ec95c97c64ebec5771",
+      "product_name": "thevoid",
+      "image_number": 5,
+      "vector": null,
+      "metadata": {
+        "file_size": 140432,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:17:10.772Z",
+        "modified_at": "2025-11-06T18:01:11.768Z",
+        "processed_at": "2025-11-06T21:53:15.171Z"
+      }
+    },
+    {
+      "image_path": "images/thevoid_6.jpg",
+      "image_name": "thevoid_6.jpg",
+      "image_hash": "0ff55bb61ae5fb906400fbe5e45b835d",
+      "product_name": "thevoid",
+      "image_number": 6,
+      "vector": null,
+      "metadata": {
+        "file_size": 429582,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:21:42.157Z",
+        "modified_at": "2025-11-06T18:01:12.112Z",
+        "processed_at": "2025-11-06T21:53:15.175Z"
+      }
+    }
+  ],
+  "created_at": "2025-11-06T21:53:17.305Z"
+}

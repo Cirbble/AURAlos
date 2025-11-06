@@ -1,0 +1,97 @@
+{
+  "product_name": "arturo",
+  "image_count": 6,
+  "images": [
+    {
+      "image_path": "images/arturo_1.jpg",
+      "image_name": "arturo_1.jpg",
+      "image_hash": "c648835372dec481a502428d231819e2",
+      "product_name": "arturo",
+      "image_number": 1,
+      "vector": null,
+      "metadata": {
+        "file_size": 69393,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:18:53.527Z",
+        "modified_at": "2025-11-06T18:01:30.980Z",
+        "processed_at": "2025-11-06T21:53:13.365Z"
+      }
+    },
+    {
+      "image_path": "images/arturo_2.jpg",
+      "image_name": "arturo_2.jpg",
+      "image_hash": "04fbaa7910b477ba74b6278709ba5858",
+      "product_name": "arturo",
+      "image_number": 2,
+      "vector": null,
+      "metadata": {
+        "file_size": 60492,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:18:53.697Z",
+        "modified_at": "2025-11-06T18:01:31.027Z",
+        "processed_at": "2025-11-06T21:53:13.367Z"
+      }
+    },
+    {
+      "image_path": "images/arturo_3.jpg",
+      "image_name": "arturo_3.jpg",
+      "image_hash": "b6d0978c4f578317835ed848adca8d59",
+      "product_name": "arturo",
+      "image_number": 3,
+      "vector": null,
+      "metadata": {
+        "file_size": 110534,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:18:54.312Z",
+        "modified_at": "2025-11-06T18:01:31.089Z",
+        "processed_at": "2025-11-06T21:53:13.372Z"
+      }
+    },
+    {
+      "image_path": "images/arturo_4.jpg",
+      "image_name": "arturo_4.jpg",
+      "image_hash": "a1b022cf3f4a81416450179661b72de7",
+      "product_name": "arturo",
+      "image_number": 4,
+      "vector": null,
+      "metadata": {
+        "file_size": 81343,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:18:54.924Z",
+        "modified_at": "2025-11-06T18:01:31.136Z",
+        "processed_at": "2025-11-06T21:53:13.375Z"
+      }
+    },
+    {
+      "image_path": "images/arturo_5.jpg",
+      "image_name": "arturo_5.jpg",
+      "image_hash": "0e578c1d7b08b145605fb185d0fd4105",
+      "product_name": "arturo",
+      "image_number": 5,
+      "vector": null,
+      "metadata": {
+        "file_size": 393849,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:18:55.465Z",
+        "modified_at": "2025-11-06T18:01:31.224Z",
+        "processed_at": "2025-11-06T21:53:13.380Z"
+      }
+    },
+    {
+      "image_path": "images/arturo_6.jpg",
+      "image_name": "arturo_6.jpg",
+      "image_hash": "5797c17d8295d8c756110f0e494eef1c",
+      "product_name": "arturo",
+      "image_number": 6,
+      "vector": null,
+      "metadata": {
+        "file_size": 329053,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:23:27.501Z",
+        "modified_at": "2025-11-06T18:01:31.305Z",
+        "processed_at": "2025-11-06T21:53:13.384Z"
+      }
+    }
+  ],
+  "created_at": "2025-11-06T21:53:17.161Z"
+}

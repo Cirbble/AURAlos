@@ -1,0 +1,97 @@
+{
+  "product_name": "hellfireclub",
+  "image_count": 6,
+  "images": [
+    {
+      "image_path": "images/hellfireclub_1.jpg",
+      "image_name": "hellfireclub_1.jpg",
+      "image_hash": "3f0cba6c4fcacb98317e7c5ecba7cb8f",
+      "product_name": "hellfireclub",
+      "image_number": 1,
+      "vector": null,
+      "metadata": {
+        "file_size": 79422,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:18:09.251Z",
+        "modified_at": "2025-11-06T18:00:37.978Z",
+        "processed_at": "2025-11-06T21:53:14.033Z"
+      }
+    },
+    {
+      "image_path": "images/hellfireclub_2.jpg",
+      "image_name": "hellfireclub_2.jpg",
+      "image_hash": "692234af0208d222f8615a4e997ff5c9",
+      "product_name": "hellfireclub",
+      "image_number": 2,
+      "vector": null,
+      "metadata": {
+        "file_size": 332531,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:18:09.386Z",
+        "modified_at": "2025-11-06T18:00:38.101Z",
+        "processed_at": "2025-11-06T21:53:14.039Z"
+      }
+    },
+    {
+      "image_path": "images/hellfireclub_3.jpg",
+      "image_name": "hellfireclub_3.jpg",
+      "image_hash": "27cfd689987dab7f3421417a9ae57342",
+      "product_name": "hellfireclub",
+      "image_number": 3,
+      "vector": null,
+      "metadata": {
+        "file_size": 1079581,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:18:09.466Z",
+        "modified_at": "2025-11-06T18:00:38.371Z",
+        "processed_at": "2025-11-06T21:53:14.049Z"
+      }
+    },
+    {
+      "image_path": "images/hellfireclub_4.jpg",
+      "image_name": "hellfireclub_4.jpg",
+      "image_hash": "8d049f33653cef59ef85213771c809a5",
+      "product_name": "hellfireclub",
+      "image_number": 4,
+      "vector": null,
+      "metadata": {
+        "file_size": 66828,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:18:09.681Z",
+        "modified_at": "2025-11-06T18:00:38.457Z",
+        "processed_at": "2025-11-06T21:53:14.052Z"
+      }
+    },
+    {
+      "image_path": "images/hellfireclub_5.jpg",
+      "image_name": "hellfireclub_5.jpg",
+      "image_hash": "a5bbfa8bbf33d4349a324afe10aa0652",
+      "product_name": "hellfireclub",
+      "image_number": 5,
+      "vector": null,
+      "metadata": {
+        "file_size": 100381,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:18:09.764Z",
+        "modified_at": "2025-11-06T18:00:38.512Z",
+        "processed_at": "2025-11-06T21:53:14.056Z"
+      }
+    },
+    {
+      "image_path": "images/hellfireclub_6.jpg",
+      "image_name": "hellfireclub_6.jpg",
+      "image_hash": "60b8edcd8f5f6e2f300e70b00d515bcc",
+      "product_name": "hellfireclub",
+      "image_number": 6,
+      "vector": null,
+      "metadata": {
+        "file_size": 89717,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:22:41.627Z",
+        "modified_at": "2025-11-06T18:00:38.568Z",
+        "processed_at": "2025-11-06T21:53:14.058Z"
+      }
+    }
+  ],
+  "created_at": "2025-11-06T21:53:17.282Z"
+}

@@ -1,0 +1,15 @@
+{
+  "image_path": "images/brando_4.jpg",
+  "image_name": "brando_4.jpg",
+  "image_hash": "17f90bf4680417a094ed3196fb18f4b0",
+  "product_name": "brando",
+  "image_number": 4,
+  "vector": null,
+  "metadata": {
+    "file_size": 148349,
+    "file_extension": ".jpg",
+    "created_at": "2025-11-06T17:34:30.581Z",
+    "modified_at": "2025-11-06T20:53:39.644Z",
+    "processed_at": "2025-11-06T21:53:13.615Z"
+  }
+}

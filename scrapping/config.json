@@ -1,0 +1,21 @@
+{
+  "opensearch": {
+    "host": "localhost",
+    "port": 9200,
+    "username": "admin",
+    "password": "admin",
+    "use_ssl": false,
+    "verify_certs": false
+  },
+  "processing": {
+    "batch_size": 10,
+    "model_name": "openai/clip-vit-base-patch32",
+    "vector_dimension": 512,
+    "index_name": "image_vectors"
+  },
+  "paths": {
+    "images_dir": "images",
+    "output_dir": "imagesopensearch"
+  },
+  "supported_formats": [".jpg", ".jpeg", ".png", ".gif"]
+}

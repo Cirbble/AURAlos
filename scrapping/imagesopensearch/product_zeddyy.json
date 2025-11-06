@@ -1,0 +1,97 @@
+{
+  "product_name": "zeddyy",
+  "image_count": 6,
+  "images": [
+    {
+      "image_path": "images/zeddyy_1.jpg",
+      "image_name": "zeddyy_1.jpg",
+      "image_hash": "3d52a90c3cf9a63f60ac90737d7df43a",
+      "product_name": "zeddyy",
+      "image_number": 1,
+      "vector": null,
+      "metadata": {
+        "file_size": 87652,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:18:22.686Z",
+        "modified_at": "2025-11-06T18:02:06.581Z",
+        "processed_at": "2025-11-06T21:53:15.540Z"
+      }
+    },
+    {
+      "image_path": "images/zeddyy_2.jpg",
+      "image_name": "zeddyy_2.jpg",
+      "image_hash": "b11a74ffca54aca8f8a6584197d7b021",
+      "product_name": "zeddyy",
+      "image_number": 2,
+      "vector": null,
+      "metadata": {
+        "file_size": 110008,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:18:22.831Z",
+        "modified_at": "2025-11-06T18:02:06.636Z",
+        "processed_at": "2025-11-06T21:53:15.544Z"
+      }
+    },
+    {
+      "image_path": "images/zeddyy_3.jpg",
+      "image_name": "zeddyy_3.jpg",
+      "image_hash": "098da1384050dca4771782224fabb6ec",
+      "product_name": "zeddyy",
+      "image_number": 3,
+      "vector": null,
+      "metadata": {
+        "file_size": 141922,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:18:23.349Z",
+        "modified_at": "2025-11-06T18:02:06.686Z",
+        "processed_at": "2025-11-06T21:53:15.547Z"
+      }
+    },
+    {
+      "image_path": "images/zeddyy_4.jpg",
+      "image_name": "zeddyy_4.jpg",
+      "image_hash": "162b6b7c21df9772c9940b0b9aacdef9",
+      "product_name": "zeddyy",
+      "image_number": 4,
+      "vector": null,
+      "metadata": {
+        "file_size": 100391,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:18:23.397Z",
+        "modified_at": "2025-11-06T18:02:06.755Z",
+        "processed_at": "2025-11-06T21:53:15.549Z"
+      }
+    },
+    {
+      "image_path": "images/zeddyy_5.jpg",
+      "image_name": "zeddyy_5.jpg",
+      "image_hash": "6ed505ce732be80082010be007b32c19",
+      "product_name": "zeddyy",
+      "image_number": 5,
+      "vector": null,
+      "metadata": {
+        "file_size": 337691,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:18:23.965Z",
+        "modified_at": "2025-11-06T18:02:06.861Z",
+        "processed_at": "2025-11-06T21:53:15.554Z"
+      }
+    },
+    {
+      "image_path": "images/zeddyy_6.jpg",
+      "image_name": "zeddyy_6.jpg",
+      "image_hash": "75f327920c6144e36a92080b674c8135",
+      "product_name": "zeddyy",
+      "image_number": 6,
+      "vector": null,
+      "metadata": {
+        "file_size": 207602,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:22:57.585Z",
+        "modified_at": "2025-11-06T18:02:06.986Z",
+        "processed_at": "2025-11-06T21:53:15.558Z"
+      }
+    }
+  ],
+  "created_at": "2025-11-06T21:53:17.311Z"
+}

@@ -1,0 +1,97 @@
+{
+  "product_name": "darion",
+  "image_count": 6,
+  "images": [
+    {
+      "image_path": "images/darion_1.jpg",
+      "image_name": "darion_1.jpg",
+      "image_hash": "d60b7e439b9daf7eb54d49a424cf423d",
+      "product_name": "darion",
+      "image_number": 1,
+      "vector": null,
+      "metadata": {
+        "file_size": 92219,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:33:51.497Z",
+        "modified_at": "2025-11-06T18:07:36.741Z",
+        "processed_at": "2025-11-06T21:53:13.788Z"
+      }
+    },
+    {
+      "image_path": "images/darion_2.jpg",
+      "image_name": "darion_2.jpg",
+      "image_hash": "cc70d80bf1969d78236c7a13f89c8db3",
+      "product_name": "darion",
+      "image_number": 2,
+      "vector": null,
+      "metadata": {
+        "file_size": 71249,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:33:51.574Z",
+        "modified_at": "2025-11-06T18:07:36.785Z",
+        "processed_at": "2025-11-06T21:53:13.791Z"
+      }
+    },
+    {
+      "image_path": "images/darion_3.jpg",
+      "image_name": "darion_3.jpg",
+      "image_hash": "99f64c74a4df1bc8c458f2731c9b9c5a",
+      "product_name": "darion",
+      "image_number": 3,
+      "vector": null,
+      "metadata": {
+        "file_size": 137345,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:33:52.071Z",
+        "modified_at": "2025-11-06T18:07:36.826Z",
+        "processed_at": "2025-11-06T21:53:13.796Z"
+      }
+    },
+    {
+      "image_path": "images/darion_4.jpg",
+      "image_name": "darion_4.jpg",
+      "image_hash": "fc11f19bac617d064bdad3ccc190c4b0",
+      "product_name": "darion",
+      "image_number": 4,
+      "vector": null,
+      "metadata": {
+        "file_size": 98328,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:33:52.750Z",
+        "modified_at": "2025-11-06T18:07:36.882Z",
+        "processed_at": "2025-11-06T21:53:13.800Z"
+      }
+    },
+    {
+      "image_path": "images/darion_5.jpg",
+      "image_name": "darion_5.jpg",
+      "image_hash": "412e4de7a7d21f3b3aaccf7836f65a13",
+      "product_name": "darion",
+      "image_number": 5,
+      "vector": null,
+      "metadata": {
+        "file_size": 297696,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:33:53.174Z",
+        "modified_at": "2025-11-06T18:07:36.949Z",
+        "processed_at": "2025-11-06T21:53:13.805Z"
+      }
+    },
+    {
+      "image_path": "images/darion_6.jpg",
+      "image_name": "darion_6.jpg",
+      "image_hash": "178e6bc21276559bdd7dbd0fdb611aec",
+      "product_name": "darion",
+      "image_number": 6,
+      "vector": null,
+      "metadata": {
+        "file_size": 279199,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:33:53.282Z",
+        "modified_at": "2025-11-06T18:07:37.026Z",
+        "processed_at": "2025-11-06T21:53:13.809Z"
+      }
+    }
+  ],
+  "created_at": "2025-11-06T21:53:17.177Z"
+}

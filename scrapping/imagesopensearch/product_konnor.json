@@ -1,0 +1,97 @@
+{
+  "product_name": "konnor",
+  "image_count": 6,
+  "images": [
+    {
+      "image_path": "images/konnor_1.jpg",
+      "image_name": "konnor_1.jpg",
+      "image_hash": "d7342d1238094c7b1e509c52de153d94",
+      "product_name": "konnor",
+      "image_number": 1,
+      "vector": null,
+      "metadata": {
+        "file_size": 72823,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:35:25.456Z",
+        "modified_at": "2025-11-06T18:08:21.653Z",
+        "processed_at": "2025-11-06T21:53:14.323Z"
+      }
+    },
+    {
+      "image_path": "images/konnor_2.jpg",
+      "image_name": "konnor_2.jpg",
+      "image_hash": "a889cd760b6ab6ae597b8f1ba1e8f61c",
+      "product_name": "konnor",
+      "image_number": 2,
+      "vector": null,
+      "metadata": {
+        "file_size": 65001,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:35:25.565Z",
+        "modified_at": "2025-11-06T18:08:21.706Z",
+        "processed_at": "2025-11-06T21:53:14.364Z"
+      }
+    },
+    {
+      "image_path": "images/konnor_3.jpg",
+      "image_name": "konnor_3.jpg",
+      "image_hash": "abd1a2000f4f44eb1bedc30baf9fbc3a",
+      "product_name": "konnor",
+      "image_number": 3,
+      "vector": null,
+      "metadata": {
+        "file_size": 107840,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:35:26.024Z",
+        "modified_at": "2025-11-06T18:08:21.755Z",
+        "processed_at": "2025-11-06T21:53:14.368Z"
+      }
+    },
+    {
+      "image_path": "images/konnor_4.jpg",
+      "image_name": "konnor_4.jpg",
+      "image_hash": "c4959bae8b40635d8b830e295abc6352",
+      "product_name": "konnor",
+      "image_number": 4,
+      "vector": null,
+      "metadata": {
+        "file_size": 88641,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:35:26.706Z",
+        "modified_at": "2025-11-06T18:08:21.793Z",
+        "processed_at": "2025-11-06T21:53:14.371Z"
+      }
+    },
+    {
+      "image_path": "images/konnor_5.jpg",
+      "image_name": "konnor_5.jpg",
+      "image_hash": "3ad5673f47c1ca458de81815d8253494",
+      "product_name": "konnor",
+      "image_number": 5,
+      "vector": null,
+      "metadata": {
+        "file_size": 269588,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:35:27.197Z",
+        "modified_at": "2025-11-06T18:08:21.873Z",
+        "processed_at": "2025-11-06T21:53:14.375Z"
+      }
+    },
+    {
+      "image_path": "images/konnor_6.jpg",
+      "image_name": "konnor_6.jpg",
+      "image_hash": "c0655dc825b37e14872e909967d9ea06",
+      "product_name": "konnor",
+      "image_number": 6,
+      "vector": null,
+      "metadata": {
+        "file_size": 306494,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:35:27.838Z",
+        "modified_at": "2025-11-06T18:08:21.953Z",
+        "processed_at": "2025-11-06T21:53:14.379Z"
+      }
+    }
+  ],
+  "created_at": "2025-11-06T21:53:17.286Z"
+}

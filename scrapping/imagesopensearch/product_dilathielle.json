@@ -1,0 +1,97 @@
+{
+  "product_name": "dilathielle",
+  "image_count": 6,
+  "images": [
+    {
+      "image_path": "images/dilathielle_1.jpg",
+      "image_name": "dilathielle_1.jpg",
+      "image_hash": "4bfac529e8a9d0e4e15be6543c46c820",
+      "product_name": "dilathielle",
+      "image_number": 1,
+      "vector": null,
+      "metadata": {
+        "file_size": 38008,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:40:51.108Z",
+        "modified_at": "2025-11-06T17:40:51.384Z",
+        "processed_at": "2025-11-06T21:53:13.831Z"
+      }
+    },
+    {
+      "image_path": "images/dilathielle_2.jpg",
+      "image_name": "dilathielle_2.jpg",
+      "image_hash": "cb3a228c359b05ed0b5a059b7c1a1a95",
+      "product_name": "dilathielle",
+      "image_number": 2,
+      "vector": null,
+      "metadata": {
+        "file_size": 119194,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:40:51.385Z",
+        "modified_at": "2025-11-06T17:40:51.514Z",
+        "processed_at": "2025-11-06T21:53:13.834Z"
+      }
+    },
+    {
+      "image_path": "images/dilathielle_3.jpg",
+      "image_name": "dilathielle_3.jpg",
+      "image_hash": "152b27dfef55b21a3025ed26e5394014",
+      "product_name": "dilathielle",
+      "image_number": 3,
+      "vector": null,
+      "metadata": {
+        "file_size": 31951,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:40:51.516Z",
+        "modified_at": "2025-11-06T17:40:52.000Z",
+        "processed_at": "2025-11-06T21:53:13.838Z"
+      }
+    },
+    {
+      "image_path": "images/dilathielle_4.jpg",
+      "image_name": "dilathielle_4.jpg",
+      "image_hash": "8f762ccd4aa2d1633fdf6877b8b7fed5",
+      "product_name": "dilathielle",
+      "image_number": 4,
+      "vector": null,
+      "metadata": {
+        "file_size": 40049,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:40:52.001Z",
+        "modified_at": "2025-11-06T17:40:52.185Z",
+        "processed_at": "2025-11-06T21:53:13.841Z"
+      }
+    },
+    {
+      "image_path": "images/dilathielle_5.jpg",
+      "image_name": "dilathielle_5.jpg",
+      "image_hash": "1a42bd7c22172cb53ef6529af672af0f",
+      "product_name": "dilathielle",
+      "image_number": 5,
+      "vector": null,
+      "metadata": {
+        "file_size": 41347,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:40:52.185Z",
+        "modified_at": "2025-11-06T17:40:52.613Z",
+        "processed_at": "2025-11-06T21:53:13.843Z"
+      }
+    },
+    {
+      "image_path": "images/dilathielle_6.jpg",
+      "image_name": "dilathielle_6.jpg",
+      "image_hash": "efd4c9dcef218ff960f3d589ffadcea0",
+      "product_name": "dilathielle",
+      "image_number": 6,
+      "vector": null,
+      "metadata": {
+        "file_size": 100494,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:40:52.614Z",
+        "modified_at": "2025-11-06T17:40:52.786Z",
+        "processed_at": "2025-11-06T21:53:13.883Z"
+      }
+    }
+  ],
+  "created_at": "2025-11-06T21:53:17.267Z"
+}

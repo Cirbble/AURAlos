@@ -1,0 +1,97 @@
+{
+  "product_name": "lewistown",
+  "image_count": 6,
+  "images": [
+    {
+      "image_path": "images/lewistown_1.jpg",
+      "image_name": "lewistown_1.jpg",
+      "image_hash": "3c06a4ec07fd5a4e8765af6a70bf0953",
+      "product_name": "lewistown",
+      "image_number": 1,
+      "vector": null,
+      "metadata": {
+        "file_size": 91884,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:23:41.734Z",
+        "modified_at": "2025-11-06T18:01:48.071Z",
+        "processed_at": "2025-11-06T21:53:14.382Z"
+      }
+    },
+    {
+      "image_path": "images/lewistown_2.jpg",
+      "image_name": "lewistown_2.jpg",
+      "image_hash": "192bbeacc51253c1768526441b4552d4",
+      "product_name": "lewistown",
+      "image_number": 2,
+      "vector": null,
+      "metadata": {
+        "file_size": 71847,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:23:41.851Z",
+        "modified_at": "2025-11-06T18:01:48.169Z",
+        "processed_at": "2025-11-06T21:53:14.385Z"
+      }
+    },
+    {
+      "image_path": "images/lewistown_3.jpg",
+      "image_name": "lewistown_3.jpg",
+      "image_hash": "af275a8a41d6c6e4a073bd7e2d3fc515",
+      "product_name": "lewistown",
+      "image_number": 3,
+      "vector": null,
+      "metadata": {
+        "file_size": 142012,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:23:41.926Z",
+        "modified_at": "2025-11-06T18:01:48.370Z",
+        "processed_at": "2025-11-06T21:53:14.390Z"
+      }
+    },
+    {
+      "image_path": "images/lewistown_4.jpg",
+      "image_name": "lewistown_4.jpg",
+      "image_hash": "179fc7b1b9b3f1fb96f2bd03f10e58ee",
+      "product_name": "lewistown",
+      "image_number": 4,
+      "vector": null,
+      "metadata": {
+        "file_size": 98280,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:23:42.509Z",
+        "modified_at": "2025-11-06T18:01:48.420Z",
+        "processed_at": "2025-11-06T21:53:14.393Z"
+      }
+    },
+    {
+      "image_path": "images/lewistown_5.jpg",
+      "image_name": "lewistown_5.jpg",
+      "image_hash": "465cd2594e4f2b2d5fa99ddc7fd3815c",
+      "product_name": "lewistown",
+      "image_number": 5,
+      "vector": null,
+      "metadata": {
+        "file_size": 363340,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:23:42.926Z",
+        "modified_at": "2025-11-06T18:01:48.537Z",
+        "processed_at": "2025-11-06T21:53:14.398Z"
+      }
+    },
+    {
+      "image_path": "images/lewistown_6.jpg",
+      "image_name": "lewistown_6.jpg",
+      "image_hash": "0dc8b971a5ad936ff763ba50481a8f9c",
+      "product_name": "lewistown",
+      "image_number": 6,
+      "vector": null,
+      "metadata": {
+        "file_size": 363963,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:23:43.826Z",
+        "modified_at": "2025-11-06T18:01:48.637Z",
+        "processed_at": "2025-11-06T21:53:14.402Z"
+      }
+    }
+  ],
+  "created_at": "2025-11-06T21:53:17.288Z"
+}

@@ -1,0 +1,15 @@
+{
+  "image_path": "images/konnor_2.jpg",
+  "image_name": "konnor_2.jpg",
+  "image_hash": "a889cd760b6ab6ae597b8f1ba1e8f61c",
+  "product_name": "konnor",
+  "image_number": 2,
+  "vector": null,
+  "metadata": {
+    "file_size": 65001,
+    "file_extension": ".jpg",
+    "created_at": "2025-11-06T17:35:25.565Z",
+    "modified_at": "2025-11-06T18:08:21.706Z",
+    "processed_at": "2025-11-06T21:53:14.364Z"
+  }
+}

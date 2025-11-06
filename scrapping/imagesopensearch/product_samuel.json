@@ -1,0 +1,97 @@
+{
+  "product_name": "samuel",
+  "image_count": 6,
+  "images": [
+    {
+      "image_path": "images/samuel_1.jpg",
+      "image_name": "samuel_1.jpg",
+      "image_hash": "2893c6794d4c6b5b02be37f3055a3524",
+      "product_name": "samuel",
+      "image_number": 1,
+      "vector": null,
+      "metadata": {
+        "file_size": 58555,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:35:57.756Z",
+        "modified_at": "2025-11-06T18:08:06.947Z",
+        "processed_at": "2025-11-06T21:53:14.943Z"
+      }
+    },
+    {
+      "image_path": "images/samuel_2.jpg",
+      "image_name": "samuel_2.jpg",
+      "image_hash": "559c693b7e16c934e682c4ed9537a948",
+      "product_name": "samuel",
+      "image_number": 2,
+      "vector": null,
+      "metadata": {
+        "file_size": 77351,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:35:57.828Z",
+        "modified_at": "2025-11-06T18:08:06.982Z",
+        "processed_at": "2025-11-06T21:53:14.947Z"
+      }
+    },
+    {
+      "image_path": "images/samuel_3.jpg",
+      "image_name": "samuel_3.jpg",
+      "image_hash": "cc8150384ca0082b1a0461abb313955b",
+      "product_name": "samuel",
+      "image_number": 3,
+      "vector": null,
+      "metadata": {
+        "file_size": 118124,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:35:58.737Z",
+        "modified_at": "2025-11-06T18:08:07.027Z",
+        "processed_at": "2025-11-06T21:53:14.950Z"
+      }
+    },
+    {
+      "image_path": "images/samuel_4.jpg",
+      "image_name": "samuel_4.jpg",
+      "image_hash": "1e3abdece9c56b753152bff46a372fe0",
+      "product_name": "samuel",
+      "image_number": 4,
+      "vector": null,
+      "metadata": {
+        "file_size": 69222,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:35:59.101Z",
+        "modified_at": "2025-11-06T18:08:07.072Z",
+        "processed_at": "2025-11-06T21:53:14.953Z"
+      }
+    },
+    {
+      "image_path": "images/samuel_5.jpg",
+      "image_name": "samuel_5.jpg",
+      "image_hash": "aac060df75a7c85106b85da0898275d4",
+      "product_name": "samuel",
+      "image_number": 5,
+      "vector": null,
+      "metadata": {
+        "file_size": 322491,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:35:59.546Z",
+        "modified_at": "2025-11-06T18:08:07.151Z",
+        "processed_at": "2025-11-06T21:53:14.957Z"
+      }
+    },
+    {
+      "image_path": "images/samuel_6.jpg",
+      "image_name": "samuel_6.jpg",
+      "image_hash": "1f3086bfbca8284e109aa9b0b63a3349",
+      "product_name": "samuel",
+      "image_number": 6,
+      "vector": null,
+      "metadata": {
+        "file_size": 427120,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:36:00.007Z",
+        "modified_at": "2025-11-06T18:08:07.239Z",
+        "processed_at": "2025-11-06T21:53:14.962Z"
+      }
+    }
+  ],
+  "created_at": "2025-11-06T21:53:17.299Z"
+}

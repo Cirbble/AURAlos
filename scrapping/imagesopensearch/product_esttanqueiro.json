@@ -1,0 +1,97 @@
+{
+  "product_name": "esttanqueiro",
+  "image_count": 6,
+  "images": [
+    {
+      "image_path": "images/esttanqueiro_1.jpg",
+      "image_name": "esttanqueiro_1.jpg",
+      "image_hash": "c96e14830f8b1db9bed4b3e90ae383ac",
+      "product_name": "esttanqueiro",
+      "image_number": 1,
+      "vector": null,
+      "metadata": {
+        "file_size": 73253,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:24:47.848Z",
+        "modified_at": "2025-11-06T18:02:57.997Z",
+        "processed_at": "2025-11-06T21:53:13.935Z"
+      }
+    },
+    {
+      "image_path": "images/esttanqueiro_2.jpg",
+      "image_name": "esttanqueiro_2.jpg",
+      "image_hash": "5e0031b659fb7d92c7add8cd54c6a492",
+      "product_name": "esttanqueiro",
+      "image_number": 2,
+      "vector": null,
+      "metadata": {
+        "file_size": 78763,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:24:47.982Z",
+        "modified_at": "2025-11-06T18:02:58.093Z",
+        "processed_at": "2025-11-06T21:53:13.939Z"
+      }
+    },
+    {
+      "image_path": "images/esttanqueiro_3.jpg",
+      "image_name": "esttanqueiro_3.jpg",
+      "image_hash": "1ee422b1cb017f925bab254f2caf71f0",
+      "product_name": "esttanqueiro",
+      "image_number": 3,
+      "vector": null,
+      "metadata": {
+        "file_size": 120980,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:24:48.656Z",
+        "modified_at": "2025-11-06T18:02:58.142Z",
+        "processed_at": "2025-11-06T21:53:13.942Z"
+      }
+    },
+    {
+      "image_path": "images/esttanqueiro_4.jpg",
+      "image_name": "esttanqueiro_4.jpg",
+      "image_hash": "28b3e382623e2cdb2ac38ff0617b8b88",
+      "product_name": "esttanqueiro",
+      "image_number": 4,
+      "vector": null,
+      "metadata": {
+        "file_size": 96557,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:24:48.722Z",
+        "modified_at": "2025-11-06T18:02:58.194Z",
+        "processed_at": "2025-11-06T21:53:13.945Z"
+      }
+    },
+    {
+      "image_path": "images/esttanqueiro_5.jpg",
+      "image_name": "esttanqueiro_5.jpg",
+      "image_hash": "6037894254b148fa52a1f407732cb742",
+      "product_name": "esttanqueiro",
+      "image_number": 5,
+      "vector": null,
+      "metadata": {
+        "file_size": 340939,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:24:49.224Z",
+        "modified_at": "2025-11-06T18:02:58.277Z",
+        "processed_at": "2025-11-06T21:53:13.950Z"
+      }
+    },
+    {
+      "image_path": "images/esttanqueiro_6.jpg",
+      "image_name": "esttanqueiro_6.jpg",
+      "image_hash": "f8776982dfb62db4f8772a344d1e69ea",
+      "product_name": "esttanqueiro",
+      "image_number": 6,
+      "vector": null,
+      "metadata": {
+        "file_size": 246252,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:24:49.755Z",
+        "modified_at": "2025-11-06T18:02:58.359Z",
+        "processed_at": "2025-11-06T21:53:13.956Z"
+      }
+    }
+  ],
+  "created_at": "2025-11-06T21:53:17.275Z"
+}

@@ -1,0 +1,97 @@
+{
+  "product_name": "aston",
+  "image_count": 6,
+  "images": [
+    {
+      "image_path": "images/aston_1.jpg",
+      "image_name": "aston_1.jpg",
+      "image_hash": "c36bba2e7f1e0beb1232feb5ffca7aab",
+      "product_name": "aston",
+      "image_number": 1,
+      "vector": null,
+      "metadata": {
+        "file_size": 121006,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T20:30:06.227Z",
+        "modified_at": "2025-11-06T21:01:27.759Z",
+        "processed_at": "2025-11-06T21:53:13.388Z"
+      }
+    },
+    {
+      "image_path": "images/aston_2.jpg",
+      "image_name": "aston_2.jpg",
+      "image_hash": "e42660fd8934b6b25c36cbc328ebcd68",
+      "product_name": "aston",
+      "image_number": 2,
+      "vector": null,
+      "metadata": {
+        "file_size": 143684,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T20:30:06.368Z",
+        "modified_at": "2025-11-06T21:01:27.861Z",
+        "processed_at": "2025-11-06T21:53:13.391Z"
+      }
+    },
+    {
+      "image_path": "images/aston_3.jpg",
+      "image_name": "aston_3.jpg",
+      "image_hash": "c4ed37ef6a4bffe338c1caa0c8beb9ae",
+      "product_name": "aston",
+      "image_number": 3,
+      "vector": null,
+      "metadata": {
+        "file_size": 198686,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T20:30:06.466Z",
+        "modified_at": "2025-11-06T21:01:27.931Z",
+        "processed_at": "2025-11-06T21:53:13.395Z"
+      }
+    },
+    {
+      "image_path": "images/aston_4.jpg",
+      "image_name": "aston_4.jpg",
+      "image_hash": "df2b462582aadb6947ccfa7303ab92d1",
+      "product_name": "aston",
+      "image_number": 4,
+      "vector": null,
+      "metadata": {
+        "file_size": 144669,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T20:30:06.556Z",
+        "modified_at": "2025-11-06T21:01:27.987Z",
+        "processed_at": "2025-11-06T21:53:13.453Z"
+      }
+    },
+    {
+      "image_path": "images/aston_5.jpg",
+      "image_name": "aston_5.jpg",
+      "image_hash": "739525959cef721ad3f5676f6f68a288",
+      "product_name": "aston",
+      "image_number": 5,
+      "vector": null,
+      "metadata": {
+        "file_size": 399875,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T20:30:06.656Z",
+        "modified_at": "2025-11-06T21:01:28.086Z",
+        "processed_at": "2025-11-06T21:53:13.460Z"
+      }
+    },
+    {
+      "image_path": "images/aston_6.jpg",
+      "image_name": "aston_6.jpg",
+      "image_hash": "7146b5bbe822203eb0b6b3cb174e7117",
+      "product_name": "aston",
+      "image_number": 6,
+      "vector": null,
+      "metadata": {
+        "file_size": 376808,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T20:30:06.824Z",
+        "modified_at": "2025-11-06T21:01:28.182Z",
+        "processed_at": "2025-11-06T21:53:13.465Z"
+      }
+    }
+  ],
+  "created_at": "2025-11-06T21:53:17.163Z"
+}

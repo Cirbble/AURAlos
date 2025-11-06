@@ -1,0 +1,14 @@
+{
+  "total_images_found": 224,
+  "total_images_processed": 224,
+  "total_products": 38,
+  "index_name": "image_vectors",
+  "output_directory": "C:\\Users\\Cirbble\\Documents\\GitHub\\AURAlos\\scrapping\\imagesopensearch",
+  "processed_at": "2025-11-06T21:53:17.315Z",
+  "files_created": {
+    "bulk_index": "bulk_index.ndjson",
+    "index_mapping": "index_mapping.json",
+    "individual_files": "224 JSON files",
+    "product_files": "38 product files"
+  }
+}

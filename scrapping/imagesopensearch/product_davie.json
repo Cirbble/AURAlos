@@ -1,0 +1,97 @@
+{
+  "product_name": "davie",
+  "image_count": 6,
+  "images": [
+    {
+      "image_path": "images/davie_1.jpg",
+      "image_name": "davie_1.jpg",
+      "image_hash": "b444676f254e37d53d1ed0404e461c44",
+      "product_name": "davie",
+      "image_number": 1,
+      "vector": null,
+      "metadata": {
+        "file_size": 56325,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:37:07.204Z",
+        "modified_at": "2025-11-06T18:07:22.345Z",
+        "processed_at": "2025-11-06T21:53:13.812Z"
+      }
+    },
+    {
+      "image_path": "images/davie_2.jpg",
+      "image_name": "davie_2.jpg",
+      "image_hash": "5fab58f136adade27263afd019d174bb",
+      "product_name": "davie",
+      "image_number": 2,
+      "vector": null,
+      "metadata": {
+        "file_size": 54205,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:37:07.336Z",
+        "modified_at": "2025-11-06T18:07:22.397Z",
+        "processed_at": "2025-11-06T21:53:13.815Z"
+      }
+    },
+    {
+      "image_path": "images/davie_3.jpg",
+      "image_name": "davie_3.jpg",
+      "image_hash": "a956a56906328da12d170b76b7e7929a",
+      "product_name": "davie",
+      "image_number": 3,
+      "vector": null,
+      "metadata": {
+        "file_size": 87716,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:37:07.786Z",
+        "modified_at": "2025-11-06T18:07:22.436Z",
+        "processed_at": "2025-11-06T21:53:13.817Z"
+      }
+    },
+    {
+      "image_path": "images/davie_4.jpg",
+      "image_name": "davie_4.jpg",
+      "image_hash": "6643842422c40a6ab1e5269e32bad136",
+      "product_name": "davie",
+      "image_number": 4,
+      "vector": null,
+      "metadata": {
+        "file_size": 75706,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:37:08.248Z",
+        "modified_at": "2025-11-06T18:07:22.463Z",
+        "processed_at": "2025-11-06T21:53:13.821Z"
+      }
+    },
+    {
+      "image_path": "images/davie_5.jpg",
+      "image_name": "davie_5.jpg",
+      "image_hash": "91d2cebcb3985f56e50cc85e6d83bed1",
+      "product_name": "davie",
+      "image_number": 5,
+      "vector": null,
+      "metadata": {
+        "file_size": 230464,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:37:08.738Z",
+        "modified_at": "2025-11-06T18:07:22.511Z",
+        "processed_at": "2025-11-06T21:53:13.824Z"
+      }
+    },
+    {
+      "image_path": "images/davie_6.jpg",
+      "image_name": "davie_6.jpg",
+      "image_hash": "18cf650c8e381bdd898ac3c4ba51789a",
+      "product_name": "davie",
+      "image_number": 6,
+      "vector": null,
+      "metadata": {
+        "file_size": 217040,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:37:09.169Z",
+        "modified_at": "2025-11-06T18:07:22.563Z",
+        "processed_at": "2025-11-06T21:53:13.829Z"
+      }
+    }
+  ],
+  "created_at": "2025-11-06T21:53:17.180Z"
+}

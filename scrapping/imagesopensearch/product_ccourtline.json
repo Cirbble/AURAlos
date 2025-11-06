@@ -1,0 +1,97 @@
+{
+  "product_name": "ccourtline",
+  "image_count": 6,
+  "images": [
+    {
+      "image_path": "images/ccourtline_1.jpg",
+      "image_name": "ccourtline_1.jpg",
+      "image_hash": "4cdf2ad884fd202ca97aa7fdb7ed7366",
+      "product_name": "ccourtline",
+      "image_number": 1,
+      "vector": null,
+      "metadata": {
+        "file_size": 75349,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:33:38.366Z",
+        "modified_at": "2025-11-06T18:03:29.286Z",
+        "processed_at": "2025-11-06T21:53:13.751Z"
+      }
+    },
+    {
+      "image_path": "images/ccourtline_2.jpg",
+      "image_name": "ccourtline_2.jpg",
+      "image_hash": "68d7af9976a391b96affe8fbf1d6bf8a",
+      "product_name": "ccourtline",
+      "image_number": 2,
+      "vector": null,
+      "metadata": {
+        "file_size": 82226,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:33:38.565Z",
+        "modified_at": "2025-11-06T18:03:29.344Z",
+        "processed_at": "2025-11-06T21:53:13.754Z"
+      }
+    },
+    {
+      "image_path": "images/ccourtline_3.jpg",
+      "image_name": "ccourtline_3.jpg",
+      "image_hash": "0982d272ce954c50fe0f53959575d846",
+      "product_name": "ccourtline",
+      "image_number": 3,
+      "vector": null,
+      "metadata": {
+        "file_size": 110139,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:33:38.658Z",
+        "modified_at": "2025-11-06T18:03:29.402Z",
+        "processed_at": "2025-11-06T21:53:13.757Z"
+      }
+    },
+    {
+      "image_path": "images/ccourtline_4.jpg",
+      "image_name": "ccourtline_4.jpg",
+      "image_hash": "d218dcdedc3adea01bbe1d184471a969",
+      "product_name": "ccourtline",
+      "image_number": 4,
+      "vector": null,
+      "metadata": {
+        "file_size": 98159,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:33:38.731Z",
+        "modified_at": "2025-11-06T18:03:29.438Z",
+        "processed_at": "2025-11-06T21:53:13.760Z"
+      }
+    },
+    {
+      "image_path": "images/ccourtline_5.jpg",
+      "image_name": "ccourtline_5.jpg",
+      "image_hash": "d59b2641058b79331719237265c95af2",
+      "product_name": "ccourtline",
+      "image_number": 5,
+      "vector": null,
+      "metadata": {
+        "file_size": 339604,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:33:39.331Z",
+        "modified_at": "2025-11-06T18:03:29.518Z",
+        "processed_at": "2025-11-06T21:53:13.764Z"
+      }
+    },
+    {
+      "image_path": "images/ccourtline_6.jpg",
+      "image_name": "ccourtline_6.jpg",
+      "image_hash": "2688662fd356d67243775295075d6ecd",
+      "product_name": "ccourtline",
+      "image_number": 6,
+      "vector": null,
+      "metadata": {
+        "file_size": 314009,
+        "file_extension": ".jpg",
+        "created_at": "2025-11-06T17:33:39.940Z",
+        "modified_at": "2025-11-06T18:03:29.587Z",
+        "processed_at": "2025-11-06T21:53:13.769Z"
+      }
+    }
+  ],
+  "created_at": "2025-11-06T21:53:17.173Z"
+}
