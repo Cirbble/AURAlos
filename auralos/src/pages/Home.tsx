@@ -72,7 +72,9 @@ export default function Home() {
               <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
                 <Link to="/collection/womens-stranger-things" className="btn-secondary">Shop Women</Link>
                 <Link to="/collection/mens-stranger-things" className="btn-secondary">Shop Men</Link>
+                <Link to="/collection/mens-stranger-things" className="btn-secondary">Shop Men</Link>
               </div>
+              
             </div>
             <div>
               <img
@@ -84,7 +86,22 @@ export default function Home() {
           </div>
         </div>
       </section>
-
+      {/* AI banner section - full width clickable banner */}
+      <section style={{ width: '100%', backgroundColor: '#f5f5f5' }}>
+        <Link
+          to="/collection/mens-stranger-things"
+          className="btn-secondary"
+          style={{
+            display: 'block',
+            width: '100%',
+            padding: '80px 20px',
+            textAlign: 'center',
+            boxSizing: 'border-box'
+          }}
+        >
+          AI Discover!
+        </Link>
+      </section>
       {/* Boot Edit */}
       <section style={{ padding: '60px 20px', backgroundColor: '#f5f5f5' }}>
         <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
