@@ -1,0 +1,21 @@
+{
+  "name": "aldo-scraper",
+  "version": "1.0.0",
+  "description": "Puppeteer scraper for Aldo shoes website",
+  "main": "puppet_scrapper_men.js",
+  "scripts": {
+    "start": "node puppet_scrapper_men.js",
+    "install-deps": "npm install puppeteer"
+  },
+  "dependencies": {
+    "puppeteer": "^21.11.0"
+  },
+  "keywords": [
+    "scraping",
+    "puppeteer",
+    "aldo",
+    "shoes"
+  ],
+  "author": "",
+  "license": "MIT"
+}

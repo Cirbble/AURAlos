@@ -1,0 +1,23 @@
+{
+  "name": "aldo-scraper-accessories",
+  "version": "1.0.0",
+  "description": "Puppeteer scraper for Aldo women's accessories website",
+  "main": "puppet_scrapper_accessories.js",
+  "scripts": {
+    "start": "node puppet_scrapper_accessories.js",
+    "clean": "node aldo_scraper_clean_accessories.js",
+    "install-deps": "npm install puppeteer"
+  },
+  "dependencies": {
+    "puppeteer": "^21.11.0"
+  },
+  "keywords": [
+    "scraping",
+    "puppeteer",
+    "aldo",
+    "accessories",
+    "women"
+  ],
+  "author": "",
+  "license": "MIT"
+}
