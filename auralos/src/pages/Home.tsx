@@ -181,32 +181,105 @@ export default function Home() {
       </section>
 
       {/* Boot Edit */}
-      <section style={{ padding: '60px 20px', backgroundColor: '#f5f5f5' }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '40px',
-            alignItems: 'center'
-          }} className="collection-content">
-            <div>
-              <img
-                src="https://via.placeholder.com/600x400/8B4513/FFFFFF?text=Boot+Collection"
-                alt="Boot Edit"
-                style={{ width: '100%', borderRadius: '4px' }}
-              />
-            </div>
-            <div>
-              <h2 style={{ fontSize: '36px', marginBottom: '15px' }}>The Boot Edit</h2>
-              <p style={{ fontSize: '16px', color: '#666', marginBottom: '25px' }}>
-                Versatile boots built for shifting temps, layered looks, and every step ahead. To take you from now into what's next.
-              </p>
-              <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-                <Link to="/collection/womens-boots" className="btn-secondary">Shop Women</Link>
-                <Link to="/collection/mens-boots" className="btn-secondary">Shop Men</Link>
-              </div>
-            </div>
+      <section style={{ padding: '0', margin: '0' }}>
+        {/* Header Section - Title Left, Buttons Right */}
+        <div style={{
+          maxWidth: '100%',
+          margin: '0 auto',
+          padding: '80px 80px 40px 80px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          gap: '60px'
+        }}>
+          <div style={{ flex: 1, maxWidth: '700px' }}>
+            <h2 style={{
+              fontSize: '60px',
+              marginBottom: '20px',
+              fontWeight: '500',
+              fontFamily: 'Jost, sans-serif',
+              letterSpacing: '0.05px',
+              lineHeight: '64px',
+              whiteSpace: 'nowrap',
+              color: '#000'
+            }}>
+              The Boot Edit
+            </h2>
+            <p style={{
+              fontSize: '18px',
+              color: '#000',
+              lineHeight: '26px',
+              maxWidth: '700px',
+              fontWeight: '400',
+              letterSpacing: '0.1px',
+              margin: '0',
+              whiteSpace: 'nowrap',
+              fontFamily: 'Jost, sans-serif'
+            }}>
+              Versatile boots built for shifting temps, layered looks, and every step ahead. To take you from now into what's next.
+            </p>
           </div>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+            minWidth: '480px',
+            alignSelf: 'flex-start'
+          }}>
+            <Link
+              to="/collection/womens-boots"
+              style={{
+                padding: '16px 80px',
+                border: '1px solid #000',
+                backgroundColor: '#fff',
+                color: '#000',
+                textAlign: 'center',
+                textDecoration: 'none',
+                fontSize: '14px',
+                fontWeight: '500',
+                fontFamily: 'Jost, sans-serif',
+                transition: 'all 0.3s ease',
+                letterSpacing: '0.5px'
+              }}
+            >
+              Shop Women
+            </Link>
+            <Link
+              to="/collection/mens-boots"
+              style={{
+                padding: '16px 80px',
+                border: '1px solid #000',
+                backgroundColor: '#fff',
+                color: '#000',
+                textAlign: 'center',
+                textDecoration: 'none',
+                fontSize: '14px',
+                fontWeight: '500',
+                fontFamily: 'Jost, sans-serif',
+                transition: 'all 0.3s ease',
+                letterSpacing: '0.5px'
+              }}
+            >
+              Shop Men
+            </Link>
+          </div>
+        </div>
+
+        {/* Image Section - FULL WIDTH */}
+        <div style={{
+          width: '100%',
+          padding: '0 80px',
+          margin: '0'
+        }}>
+          <img
+            src="https://www.aldoshoes.com/cdn/shop/files/oct25-s18-hp-inhead-boots-desktop.jpg?v=1761330882"
+            alt="The Boot Edit"
+            style={{
+              width: '100%',
+              height: 'auto',
+              display: 'block'
+            }}
+          />
         </div>
       </section>
 
