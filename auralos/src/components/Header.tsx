@@ -202,7 +202,7 @@ export default function Header() {
               <li><Link to="/collection/stranger-things" style={secondaryNavStyle}>Stranger Things</Link></li>
               <li><Link to="/collection/boots" style={secondaryNavStyle}>Boot Shop</Link></li>
               <li><Link to="/collection/new-arrivals" style={secondaryNavStyle}>New In</Link></li>
-              <li><Link to="/ai-collection" style={secondaryNavStyle}>Discover Ai!</Link></li>
+              <li><Link to="/find-your-fit" style={secondaryNavStyle}>Find Your <em style={{ fontStyle: 'italic' }}>Fit</em></Link></li>
             </ul>
           </nav>
         </div>

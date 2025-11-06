@@ -122,22 +122,64 @@ export default function Home() {
         </div>
       </section>
 
-      {/* AI banner section - full width clickable banner */}
-      <section style={{ width: '100%', backgroundColor: '#f5f5f5' }}>
-        <Link
-          to="/ai-collection"
-          className="btn-secondary"
-          style={{
-            display: 'block',
-            width: '100%',
-            padding: '80px 20px',
-            textAlign: 'center',
-            boxSizing: 'border-box'
-          }}
-        >
-          AI Discover!
-        </Link>
+      {/* AI Discover Section */}
+      <section style={{ padding: '0', margin: '0' }}>
+        <div style={{
+          width: '100%',
+          padding: '70px 80px 80px 80px',
+          margin: '0',
+          backgroundColor: '#fafafa',
+          borderTop: '1px solid #e8e8e8',
+          borderBottom: '1px solid #e8e8e8'
+        }}>
+          <div style={{
+            maxWidth: '600px',
+            margin: '0 auto',
+            textAlign: 'center'
+          }}>
+            <h3 style={{
+              fontSize: '28px',
+              color: '#000',
+              marginBottom: '12px',
+              fontFamily: 'Jost, sans-serif',
+              fontWeight: '500',
+              letterSpacing: '0.3px'
+            }}>
+              Not sure what you're looking for?
+            </h3>
+            <p style={{
+              fontSize: '15px',
+              color: '#666',
+              marginBottom: '28px',
+              fontFamily: 'Jost, sans-serif',
+              fontWeight: '400',
+              lineHeight: '22px'
+            }}>
+              Let our AI assistant guide you to your perfect product
+            </p>
+            <Link
+              to="/find-your-fit"
+              style={{
+                display: 'inline-block',
+                padding: '18px 60px',
+                textAlign: 'center',
+                backgroundColor: '#000',
+                color: '#fff',
+                textDecoration: 'none',
+                fontSize: '14px',
+                fontWeight: '500',
+                fontFamily: 'Jost, sans-serif',
+                letterSpacing: '0.5px',
+                transition: 'all 0.3s ease',
+                border: 'none'
+              }}
+            >
+              Find Your <em style={{ fontStyle: 'italic' }}>Fit</em>
+            </Link>
+          </div>
+        </div>
       </section>
+
       {/* Boot Edit */}
       <section style={{ padding: '60px 20px', backgroundColor: '#f5f5f5' }}>
         <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
