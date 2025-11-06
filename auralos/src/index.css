@@ -49,6 +49,28 @@ body {
   border-color: #333;
 }
 
+/* AI Chat Typing Animation */
+.typing-dots {
+  display: inline-block;
+  margin-left: 4px;
+}
+
+.typing-dots::after {
+  content: '...';
+  animation: dots 1.5s steps(4, end) infinite;
+}
+
+@keyframes dots {
+  0%, 20% {
+    content: '.';
+  }
+  40% {
+    content: '..';
+  }
+  60%, 100% {
+    content: '...';
+  }
+}
 .btn-secondary {
   display: inline-block;
   padding: 12px 30px;

@@ -1,43 +1,156 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { products } from '../data/products';
 import ProductCard from '../components/ProductCard';
+import { uploadImageToS3, validateImageFile, fileToBase64 } from '../services/s3Service';
+import { invokeAgent, generateSessionId } from '../services/bedrockService';
+import type { AgentMessage } from '../services/bedrockService';
+import type { Product } from '../types/product';
+
+type Stage = 'input' | 'conversation' | 'results';
+
+interface SearchResult {
+  product: Product;
+  matchScore: number;
+  reasoning: string;
+  pros: string[];
+  cons: string[];
+}
 
 export default function AICollection() {
-  // Filter products or use AI-specific products later
-  const aiRecommendedProducts = products.slice(0, 12); // For now, showing first 12 products
+  // State management
+  const [stage, setStage] = useState<Stage>('input');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imageS3Key, setImageS3Key] = useState<string | null>(null);
+  const [textPrompt, setTextPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sessionId] = useState(() => generateSessionId());
+  const [messages, setMessages] = useState<AgentMessage[]>([]);
+  const [userInput, setUserInput] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const handleImageUpload = (files: File[]) => {
+  // Auto-scroll to bottom of chat
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleImageUpload = async (files: File[]) => {
     setError(null);
-    const file = files[0]; // Handle first file only
+    const file = files[0];
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      setError('Please upload an image file (JPG, PNG, GIF)');
+    // Validate file
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      setError(validation.error || 'Invalid file');
       return;
     }
 
-    // Validate file size (5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Image size should be less than 5MB');
+    setSelectedFile(file);
+
+    // Create preview
+    const preview = await fileToBase64(file);
+    setSelectedImage(preview);
+  };
+
+  const handleStartSearch = async () => {
+    if (!selectedImage && !textPrompt.trim()) {
+      setError('Please upload an image or enter a description');
       return;
     }
 
     setIsLoading(true);
+    setError(null);
+    setStage('conversation');
 
-    // Create a preview URL for the image
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setSelectedImage(reader.result as string);
+    try {
+      // Upload image to S3 if present
+      let s3Key: string | undefined;
+      if (selectedFile) {
+        const uploadResult = await uploadImageToS3(selectedFile);
+        if (!uploadResult.success) {
+          throw new Error(uploadResult.error || 'Failed to upload image');
+        }
+        s3Key = uploadResult.s3Key;
+        setImageS3Key(s3Key);
+      }
+
+      // Create initial message
+      const initialMessage = textPrompt.trim() || 'I uploaded an image. Can you help me find similar products?';
+
+      // Add user message to chat
+      const userMessage: AgentMessage = {
+        role: 'user',
+        content: initialMessage,
+        timestamp: Date.now()
+      };
+      setMessages([userMessage]);
+
+      // Invoke Bedrock agent - it will handle out-of-scope queries naturally
+      const response = await invokeAgent(initialMessage, sessionId, s3Key);
+
+      // Add agent response to chat
+      const agentMessage: AgentMessage = {
+        role: 'agent',
+        content: response.text,
+        timestamp: Date.now()
+      };
+      setMessages(prev => [...prev, agentMessage]);
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      setStage('input');
+    } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!userInput.trim() || isLoading) return;
+
+    const userMessage: AgentMessage = {
+      role: 'user',
+      content: userInput,
+      timestamp: Date.now()
     };
-    reader.onerror = () => {
-      setError('Error reading file');
+    setMessages(prev => [...prev, userMessage]);
+    setUserInput('');
+    setIsLoading(true);
+
+    try {
+      const response = await invokeAgent(userInput, sessionId, imageS3Key || undefined);
+
+      const agentMessage: AgentMessage = {
+        role: 'agent',
+        content: response.text,
+        timestamp: Date.now()
+      };
+      setMessages(prev => [...prev, agentMessage]);
+
+      // Check if agent provided results (simple heuristic - check for product recommendations)
+      if (response.text.toLowerCase().includes('recommend') || response.text.toLowerCase().includes('product')) {
+        // For now, show sample results. In production, parse agent response
+        setSearchResults([]);
+        setStage('results');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send message');
+    } finally {
       setIsLoading(false);
-    };
-    reader.readAsDataURL(file);
+    }
+  };
+
+  const handleReset = () => {
+    setStage('input');
+    setSelectedImage(null);
+    setSelectedFile(null);
+    setImageS3Key(null);
+    setTextPrompt('');
+    setMessages([]);
+    setUserInput('');
+    setSearchResults([]);
+    setError(null);
   };
 
   return (
@@ -55,7 +168,7 @@ export default function AICollection() {
             fontWeight: 'bold',
             marginBottom: '20px'
           }}>
-            AI-Curated Collection
+            AI Visual Search
           </h1>
           <p style={{
             fontSize: '18px',
@@ -63,181 +176,474 @@ export default function AICollection() {
             margin: '0 auto 30px',
             lineHeight: '1.6'
           }}>
-            Discover personalized recommendations powered by AI. Our smart algorithm curates pieces that match your style preferences and current trends.
+            Upload an image or describe what you're looking for. Our AI will help you find the perfect match.
           </p>
         </div>
       </section>
 
-      {/* Image Upload Section */}
-      <section style={{ 
-        padding: '60px 20px',
-        backgroundColor: '#f8fafc'
-      }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
-          <h2 style={{ 
-            fontSize: '32px',
-            marginBottom: '20px'
-          }}>
-            Find Similar Styles
-          </h2>
-          <p style={{
-            fontSize: '16px',
-            color: '#666',
-            marginBottom: '30px'
-          }}>
-            Upload an image or drag and drop to find similar products in our collection
-          </p>
-          
-          <div
-            style={{
-              border: '2px dashed #6366F1',
-              borderRadius: '12px',
-              padding: '40px 20px',
-              backgroundColor: '#EEF2FF',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
-            }}
-            onDragOver={(e) => {
-              e.preventDefault();
-              e.currentTarget.style.backgroundColor = '#E0E7FF';
-              e.currentTarget.style.borderColor = '#4F46E5';
-            }}
-            onDragLeave={(e) => {
-              e.preventDefault();
-              e.currentTarget.style.backgroundColor = '#EEF2FF';
-              e.currentTarget.style.borderColor = '#6366F1';
-            }}
-            onDrop={(e) => {
-              e.preventDefault();
-              e.currentTarget.style.backgroundColor = '#EEF2FF';
-              e.currentTarget.style.borderColor = '#6366F1';
-              const files = Array.from(e.dataTransfer.files);
-              const imageFiles = files.filter(file => file.type.startsWith('image/'));
-              if (imageFiles.length > 0) {
-                handleImageUpload(imageFiles);
-              }
-            }}
-            onClick={() => document.getElementById('imageUpload')?.click()}
-          >
-            {selectedImage ? (
+      {/* Main Content */}
+      {stage === 'input' && (
+        <section style={{
+          padding: '60px 20px',
+          backgroundColor: '#f8fafc',
+          minHeight: '60vh'
+        }}>
+          <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+            <h2 style={{
+              fontSize: '32px',
+              marginBottom: '30px',
+              textAlign: 'center'
+            }}>
+              Start Your Search
+            </h2>
+
+            {/* Image Upload Area */}
+            <div style={{ marginBottom: '30px' }}>
+              <h3 style={{ fontSize: '18px', marginBottom: '15px', color: '#333' }}>
+                Upload an Image
+              </h3>
+              <div
+                style={{
+                  border: '2px dashed #6366F1',
+                  borderRadius: '12px',
+                  padding: '40px 20px',
+                  backgroundColor: '#EEF2FF',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  textAlign: 'center'
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.style.backgroundColor = '#E0E7FF';
+                  e.currentTarget.style.borderColor = '#4F46E5';
+                }}
+                onDragLeave={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.style.backgroundColor = '#EEF2FF';
+                  e.currentTarget.style.borderColor = '#6366F1';
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.style.backgroundColor = '#EEF2FF';
+                  e.currentTarget.style.borderColor = '#6366F1';
+                  const files = Array.from(e.dataTransfer.files);
+                  const imageFiles = files.filter(file => file.type.startsWith('image/'));
+                  if (imageFiles.length > 0) {
+                    handleImageUpload(imageFiles);
+                  }
+                }}
+                onClick={() => document.getElementById('imageUpload')?.click()}
+              >
+                {selectedImage ? (
+                  <div style={{
+                    position: 'relative',
+                    width: '100%',
+                    maxWidth: '300px',
+                    margin: '0 auto'
+                  }}>
+                    <img
+                      src={selectedImage}
+                      alt="Uploaded preview"
+                      style={{
+                        width: '100%',
+                        height: 'auto',
+                        borderRadius: '8px',
+                        marginBottom: '10px'
+                      }}
+                    />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedImage(null);
+                        setSelectedFile(null);
+                        setError(null);
+                      }}
+                      style={{
+                        position: 'absolute',
+                        top: '-10px',
+                        right: '-10px',
+                        background: '#EF4444',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '30px',
+                        height: '30px',
+                        cursor: 'pointer',
+                        fontSize: '18px',
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '15px'
+                  }}>
+                    <svg
+                      width="48"
+                      height="48"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#6366F1"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="17 8 12 3 7 8" />
+                      <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                    <div>
+                      <p style={{
+                        fontSize: '16px',
+                        fontWeight: 500,
+                        color: '#4F46E5',
+                        marginBottom: '8px'
+                      }}>
+                        Drag and drop your image here
+                      </p>
+                      <p style={{
+                        fontSize: '14px',
+                        color: '#6B7280'
+                      }}>
+                        or click to browse files
+                      </p>
+                    </div>
+                  </div>
+                )}
+                <input
+                  type="file"
+                  id="imageUpload"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []);
+                    if (files.length > 0) {
+                      handleImageUpload(files);
+                    }
+                  }}
+                />
+              </div>
+              <p style={{
+                fontSize: '14px',
+                color: '#6B7280',
+                marginTop: '10px',
+                textAlign: 'center'
+              }}>
+                Supported: JPG, PNG, WebP (max 10MB)
+              </p>
+            </div>
+
+            {/* OR Divider */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              margin: '30px 0',
+              gap: '15px'
+            }}>
+              <div style={{ flex: 1, height: '1px', backgroundColor: '#D1D5DB' }} />
+              <span style={{ color: '#6B7280', fontSize: '14px', fontWeight: '500' }}>OR</span>
+              <div style={{ flex: 1, height: '1px', backgroundColor: '#D1D5DB' }} />
+            </div>
+
+            {/* Text Prompt Area */}
+            <div style={{ marginBottom: '30px' }}>
+              <h3 style={{ fontSize: '18px', marginBottom: '15px', color: '#333' }}>
+                Describe What You're Looking For
+              </h3>
+              <textarea
+                value={textPrompt}
+                onChange={(e) => setTextPrompt(e.target.value)}
+                placeholder="E.g., 'Black leather ankle boots with a block heel, suitable for office wear, under $150'"
+                style={{
+                  width: '100%',
+                  minHeight: '120px',
+                  padding: '15px',
+                  fontSize: '16px',
+                  borderRadius: '12px',
+                  border: '2px solid #D1D5DB',
+                  resize: 'vertical',
+                  fontFamily: 'inherit',
+                  outline: 'none',
+                  transition: 'border-color 0.3s'
+                }}
+                onFocus={(e) => e.currentTarget.style.borderColor = '#6366F1'}
+                onBlur={(e) => e.currentTarget.style.borderColor = '#D1D5DB'}
+              />
+            </div>
+
+            {/* Error Message */}
+            {error && (
               <div style={{
-                position: 'relative',
+                backgroundColor: '#FEE2E2',
+                color: '#DC2626',
+                padding: '12px 16px',
+                borderRadius: '8px',
+                marginBottom: '20px',
+                fontSize: '14px'
+              }}>
+                {error}
+              </div>
+            )}
+
+            {/* Start Search Button */}
+            <button
+              onClick={handleStartSearch}
+              disabled={isLoading || (!selectedImage && !textPrompt.trim())}
+              style={{
                 width: '100%',
-                maxWidth: '300px',
-                margin: '0 auto'
+                padding: '16px',
+                fontSize: '18px',
+                fontWeight: '600',
+                color: '#fff',
+                background: (isLoading || (!selectedImage && !textPrompt.trim()))
+                  ? '#9CA3AF'
+                  : 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)',
+                border: 'none',
+                borderRadius: '12px',
+                cursor: (isLoading || (!selectedImage && !textPrompt.trim())) ? 'not-allowed' : 'pointer',
+                transition: 'transform 0.2s',
+                boxShadow: '0 4px 6px rgba(99, 102, 241, 0.25)'
+              }}
+              onMouseEnter={(e) => {
+                if (!isLoading && (selectedImage || textPrompt.trim())) {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              {isLoading ? 'Starting AI Search...' : 'Start AI Search'}
+            </button>
+          </div>
+        </section>
+      )}
+
+      {/* Conversation Stage */}
+      {stage === 'conversation' && (
+        <section style={{
+          padding: '40px 20px',
+          backgroundColor: '#f8fafc',
+          minHeight: '70vh'
+        }}>
+          <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+            {/* Header with Reset Button */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '30px'
+            }}>
+              <h2 style={{ fontSize: '28px', margin: 0 }}>AI Conversation</h2>
+              <button
+                onClick={handleReset}
+                style={{
+                  padding: '10px 20px',
+                  fontSize: '14px',
+                  color: '#6366F1',
+                  background: '#fff',
+                  border: '2px solid #6366F1',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: '500'
+                }}
+              >
+                New Search
+              </button>
+            </div>
+
+            {/* Image Preview (if uploaded) */}
+            {selectedImage && (
+              <div style={{
+                marginBottom: '20px',
+                padding: '15px',
+                backgroundColor: '#fff',
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '15px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
               }}>
                 <img
                   src={selectedImage}
-                  alt="Uploaded preview"
+                  alt="Your upload"
                   style={{
-                    width: '100%',
-                    height: 'auto',
-                    borderRadius: '8px',
-                    marginBottom: '10px'
+                    width: '80px',
+                    height: '80px',
+                    objectFit: 'cover',
+                    borderRadius: '8px'
                   }}
                 />
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedImage(null);
-                    setError(null);
-                  }}
-                  style={{
-                    position: 'absolute',
-                    top: '-10px',
-                    right: '-10px',
-                    background: '#EF4444',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '50%',
-                    width: '24px',
-                    height: '24px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '14px'
-                  }}
-                >
-                  ×
-                </button>
-                {isLoading && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    background: 'rgba(0,0,0,0.5)',
-                    color: 'white',
-                    padding: '10px',
-                    borderRadius: '4px'
-                  }}>
-                    Processing...
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '15px'
-              }}>
-                <svg 
-                  width="48" 
-                  height="48" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke="#6366F1" 
-                  strokeWidth="2" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                >
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="17 8 12 3 7 8" />
-                  <line x1="12" y1="3" x2="12" y2="15" />
-                </svg>
                 <div>
-                  <p style={{ 
-                    fontSize: '16px', 
-                    fontWeight: 500,
-                    color: '#4F46E5',
-                    marginBottom: '8px'
-                  }}>
-                    Drag and drop your image here
-                  </p>
-                  <p style={{ 
-                    fontSize: '14px',
-                    color: '#6B7280'
-                  }}>
-                    or click to browse files
+                  <p style={{ fontSize: '14px', color: '#6B7280', margin: 0 }}>Your Image</p>
+                  <p style={{ fontSize: '12px', color: '#9CA3AF', margin: '4px 0 0 0' }}>
+                    AI is analyzing this image
                   </p>
                 </div>
               </div>
             )}
-            <input
-              type="file"
-              id="imageUpload"
-              accept="image/*"
-              style={{ display: 'none' }}
-              onChange={(e) => {
-                const files = Array.from(e.target.files || []);
-                if (files.length > 0) {
-                  handleImageUpload(files);
-                }
-              }}
-            />
+
+            {/* Chat Messages */}
+            <div style={{
+              backgroundColor: '#fff',
+              borderRadius: '12px',
+              padding: '20px',
+              marginBottom: '20px',
+              minHeight: '400px',
+              maxHeight: '500px',
+              overflowY: 'auto',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+            }}>
+              {messages.map((msg, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    marginBottom: '20px',
+                    display: 'flex',
+                    justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start'
+                  }}
+                >
+                  <div
+                    style={{
+                      maxWidth: '70%',
+                      padding: '12px 16px',
+                      borderRadius: '12px',
+                      backgroundColor: msg.role === 'user' ? '#6366F1' : '#F3F4F6',
+                      color: msg.role === 'user' ? '#fff' : '#1F2937'
+                    }}
+                  >
+                    <p style={{ margin: 0, fontSize: '15px', lineHeight: '1.5' }}>
+                      {msg.content}
+                    </p>
+                    <p style={{
+                      margin: '8px 0 0 0',
+                      fontSize: '11px',
+                      opacity: 0.7
+                    }}>
+                      {new Date(msg.timestamp).toLocaleTimeString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              {isLoading && (
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'flex-start',
+                  marginBottom: '20px'
+                }}>
+                  <div style={{
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                    backgroundColor: '#F3F4F6',
+                    color: '#6B7280'
+                  }}>
+                    <span>AI is thinking</span>
+                    <span className="typing-dots">...</span>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input Box */}
+            <div style={{
+              display: 'flex',
+              gap: '10px'
+            }}>
+              <input
+                type="text"
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+                placeholder="Type your message..."
+                disabled={isLoading}
+                style={{
+                  flex: 1,
+                  padding: '14px 16px',
+                  fontSize: '16px',
+                  borderRadius: '12px',
+                  border: '2px solid #D1D5DB',
+                  outline: 'none',
+                  fontFamily: 'inherit'
+                }}
+              />
+              <button
+                onClick={handleSendMessage}
+                disabled={isLoading || !userInput.trim()}
+                style={{
+                  padding: '14px 30px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  color: '#fff',
+                  background: (isLoading || !userInput.trim())
+                    ? '#9CA3AF'
+                    : 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)',
+                  border: 'none',
+                  borderRadius: '12px',
+                  cursor: (isLoading || !userInput.trim()) ? 'not-allowed' : 'pointer'
+                }}
+              >
+                Send
+              </button>
+            </div>
           </div>
-          
-          <p style={{
-            fontSize: '14px',
-            color: '#6B7280',
-            marginTop: '15px'
-          }}>
-            Supported formats: JPG, PNG, GIF (max 5MB)
-          </p>
-        </div>
-      </section>
+        </section>
+      )}
+
+      {/* Results Stage */}
+      {stage === 'results' && (
+        <section style={{
+          padding: '60px 20px',
+          backgroundColor: '#fff'
+        }}>
+          <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '40px'
+            }}>
+              <h2 style={{ fontSize: '32px', margin: 0 }}>Recommended Products</h2>
+              <button
+                onClick={handleReset}
+                style={{
+                  padding: '12px 24px',
+                  fontSize: '16px',
+                  color: '#6366F1',
+                  background: '#fff',
+                  border: '2px solid #6366F1',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: '500'
+                }}
+              >
+                New Search
+              </button>
+            </div>
+
+            {/* Show search results if any, otherwise show default products */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+              gap: '30px'
+            }}>
+              {(searchResults.length > 0 ? searchResults.map(r => r.product) : products.slice(0, 12)).map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
     </main>
   );
 }

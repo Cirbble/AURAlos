@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# Environment variables (contains AWS credentials)
+.env
+.env.local
+.env.production
+credentials.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
