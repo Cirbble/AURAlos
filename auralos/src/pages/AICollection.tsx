@@ -30,11 +30,36 @@ export default function AICollection() {
   const [userInput, setUserInput] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isFocused, setIsFocused] = useState(false);
+
+  const placeholders = [
+    "black leather boots",
+    "white sneakers",
+    "heeled sandals",
+    "crossbody bags",
+    "ankle boots",
+    "loafers",
+    "platform heels",
+    "tote bags",
+    "mules",
+    "oxfords"
+  ];
+
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
 
   // Auto-scroll to bottom of chat
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Carousel animation
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPlaceholderIndex(prev => (prev + 1) % placeholders.length);
+    }, 2500);
+
+    return () => clearInterval(interval);
+  }, [placeholders.length]);
 
   const handleImageUpload = async (files: File[]) => {
     setError(null);
@@ -155,29 +180,124 @@ export default function AICollection() {
 
   return (
     <main>
-      {/* Hero Banner */}
-      <section style={{
-        background: 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)',
-        padding: '60px 20px',
-        color: '#fff',
-        textAlign: 'center'
-      }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+      {/* Hero Section */}
+      <section style={{ padding: '0', margin: '0' }}>
+        <div style={{
+          maxWidth: '100%',
+          margin: '0 auto',
+          padding: '80px 80px 60px 80px',
+          textAlign: 'center'
+        }}>
           <h1 style={{
-            fontSize: '48px',
-            fontWeight: 'bold',
+            fontSize: '60px',
+            fontWeight: '500',
+            fontFamily: 'Jost, sans-serif',
+            letterSpacing: '0.05px',
+            lineHeight: '64px',
+            color: '#000',
             marginBottom: '20px'
           }}>
-            AI Visual Search
+            Find Your <em style={{ fontStyle: 'italic' }}>Fit</em>
           </h1>
-          <p style={{
-            fontSize: '18px',
-            maxWidth: '800px',
-            margin: '0 auto 30px',
-            lineHeight: '1.6'
+
+          {/* Interactive Search Bar with Carousel */}
+          <div style={{
+            maxWidth: '600px',
+            margin: '0 auto 30px auto',
+            padding: '18px 24px',
+            border: `1px solid ${isFocused ? '#000' : '#ddd'}`,
+            backgroundColor: '#fff',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            transition: 'border-color 0.2s ease'
           }}>
-            Upload an image or describe what you're looking for. Our AI will help you find the perfect match.
-          </p>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#999"
+              strokeWidth="2"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+            </svg>
+            <span style={{
+              fontFamily: 'Jost, sans-serif',
+              fontSize: '16px',
+              color: '#999',
+              whiteSpace: 'nowrap'
+            }}>
+              Searching for
+            </span>
+            <div style={{
+              position: 'relative',
+              flex: 1,
+              minWidth: 0,
+              height: '24px',
+              overflow: 'hidden'
+            }}>
+              <div style={{
+                position: 'relative',
+                width: '100%',
+                height: '100%'
+              }}>
+                {placeholders.map((placeholder, idx) => {
+                  // Calculate position for continuous upward rotation
+                  let position = idx - placeholderIndex;
+
+                  // Wrap around: if item is "behind", show it below waiting
+                  if (position < 0) {
+                    position += placeholders.length;
+                  }
+
+                  // Determine opacity for smooth transitions
+                  let opacity = 0;
+                  if (position === 0) opacity = 1; // Current item
+                  if (position === placeholders.length - 1) opacity = 0.3; // Item coming from below
+
+                  return (
+                    <input
+                      key={idx}
+                      type="text"
+                      value={textPrompt}
+                      onChange={(e) => setTextPrompt(e.target.value)}
+                      onFocus={() => setIsFocused(true)}
+                      onBlur={() => setIsFocused(false)}
+                      placeholder={placeholder}
+                      disabled={idx !== placeholderIndex}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        border: 'none',
+                        outline: 'none',
+                        fontFamily: 'Jost, sans-serif',
+                        fontSize: '16px',
+                        color: '#000',
+                        fontWeight: '500',
+                        backgroundColor: 'transparent',
+                        pointerEvents: idx === placeholderIndex ? 'auto' : 'none',
+                        transform: `translateY(${position * 100}%)`,
+                        transition: 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.5s ease',
+                        opacity: opacity
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <style>{`
+            input::placeholder {
+              color: #000;
+              opacity: 1;
+              transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+          `}</style>
         </div>
       </section>
 
