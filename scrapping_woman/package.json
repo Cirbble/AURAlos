@@ -1,0 +1,23 @@
+{
+  "name": "aldo-scraper-women",
+  "version": "1.0.0",
+  "description": "Puppeteer scraper for Aldo women's shoes website",
+  "main": "puppet_scrapper_women.js",
+  "scripts": {
+    "start": "node puppet_scrapper_women.js",
+    "clean": "node aldo_scraper_clean_women.js",
+    "install-deps": "npm install puppeteer"
+  },
+  "dependencies": {
+    "puppeteer": "^21.11.0"
+  },
+  "keywords": [
+    "scraping",
+    "puppeteer",
+    "aldo",
+    "shoes",
+    "women"
+  ],
+  "author": "",
+  "license": "MIT"
+}
