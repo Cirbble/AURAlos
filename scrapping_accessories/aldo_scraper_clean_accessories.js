@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
-async function scrapeAldoWomen() {
+async function scrapeAldoAccessories() {
     const browser = await puppeteer.launch({
         headless: false,
         defaultViewport: { width: 1920, height: 1080 },
@@ -14,8 +14,8 @@ async function scrapeAldoWomen() {
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
     try {
-        console.log('🚀 Navigating to Aldo women\'s collection...');
-        await page.goto('https://www.aldoshoes.com/en-ca/collections/womens?fetch.skip=45&fetch.to=90', { 
+        console.log('🚀 Navigating to Aldo women\'s accessories collection...');
+        await page.goto('https://www.aldoshoes.com/en-ca/collections/womens-accessories', { 
             waitUntil: 'networkidle2', 
             timeout: 30000 
         });
@@ -36,7 +36,7 @@ async function scrapeAldoWomen() {
         console.log('📄 Finding all product links across all pages...');
         
         // Load all pages and collect all product links
-        const productLinks = await loadAllPages(page, 'https://www.aldoshoes.com/en-ca/collections/womens');
+        const productLinks = await loadAllPages(page, 'https://www.aldoshoes.com/en-ca/collections/womens-accessories');
 
         console.log(`🎯 Found ${productLinks.length} total product links across all pages`);
 
@@ -149,11 +149,51 @@ async function scrapeAldoWomen() {
                         }
                     }
 
+                    // Try to get product category/type for accessories
+                    let category = null;
+                    const categorySelectors = [
+                        '.breadcrumb',
+                        '.product-category',
+                        '.product-type',
+                        '[data-testid="breadcrumb"]',
+                        '.breadcrumbs'
+                    ];
+                    
+                    for (const selector of categorySelectors) {
+                        const element = document.querySelector(selector);
+                        if (element && element.textContent?.trim()) {
+                            category = cleanText(element);
+                            break;
+                        }
+                    }
+
+                    // Try to get material or description
+                    let description = null;
+                    const descriptionSelectors = [
+                        '.product-description',
+                        '.product-details',
+                        '[data-testid="product-description"]',
+                        '.pdp-description'
+                    ];
+                    
+                    for (const selector of descriptionSelectors) {
+                        const element = document.querySelector(selector);
+                        if (element && element.textContent?.trim()) {
+                            description = cleanText(element);
+                            if (description && description.length > 200) {
+                                description = description.substring(0, 200) + '...';
+                            }
+                            break;
+                        }
+                    }
+
                     return {
                         name: name,
                         price: price,
                         images: images,
                         colorOptions: colorOptions,
+                        category: category,
+                        description: description,
                         url: window.location.href
                     };
                 });
@@ -162,11 +202,12 @@ async function scrapeAldoWomen() {
                 if (productData.name && productData.name.length > 100) {
                     // Try to extract just the product name from long titles
                     const words = productData.name.split(' ');
-                    productData.name = words.slice(0, 3).join(' '); // Take first 3 words
+                    productData.name = words.slice(0, 4).join(' '); // Take first 4 words for accessories
                 }
 
                 console.log(`Product: ${productData.name || 'Unknown'}`);
                 console.log(`Price: ${productData.price || 'No price found'}`);
+                console.log(`Category: ${productData.category || 'No category found'}`);
                 console.log(`Images: ${productData.images.length}`);
                 console.log(`Colors: ${productData.colorOptions.length}`);
 
@@ -179,7 +220,7 @@ async function scrapeAldoWomen() {
                             const extension = imageUrl.split('.').pop().split('?')[0] || 'jpg';
                             const safeName = productData.name ? 
                                 productData.name.replace(/[^a-z0-9]/gi, '_').toLowerCase() : 
-                                `product_${i + 1}`;
+                                `accessory_${i + 1}`;
                             const filename = `${safeName}_${j + 1}.${extension}`;
                             
                             await downloadImage(imageUrl, path.join(imageDir, filename));
@@ -196,6 +237,8 @@ async function scrapeAldoWomen() {
                         url: productData.url,
                         images: productData.images,
                         colorOptions: productData.colorOptions,
+                        category: productData.category,
+                        description: productData.description,
                         downloadedImages: downloadedImages
                     });
 
@@ -206,7 +249,7 @@ async function scrapeAldoWomen() {
 
                 // Save progress every 10 products
                 if ((i + 1) % 10 === 0) {
-                    const progressFile = path.join(__dirname, 'aldo_womens_products_progress.json');
+                    const progressFile = path.join(__dirname, 'aldo_accessories_products_progress.json');
                     fs.writeFileSync(progressFile, JSON.stringify(products, null, 2));
                     console.log(`💾 Progress saved: ${products.length} products`);
                 }
@@ -220,25 +263,35 @@ async function scrapeAldoWomen() {
         }
 
         // Save results
-        const outputFile = path.join(__dirname, 'aldo_womens_products_full.json');
+        const outputFile = path.join(__dirname, 'aldo_accessories_products_full.json');
         fs.writeFileSync(outputFile, JSON.stringify(products, null, 2));
         console.log(`\n🎉 Scraping completed! Saved ${products.length} products to ${outputFile}`);
         console.log(`📁 Images saved to: ${imageDir}`);
 
         // Print summary
         console.log('\n📊 Final Summary:');
-        console.log(`✅ Total products scraped: ${products.length}`);
+        console.log(`✅ Total accessories scraped: ${products.length}`);
         console.log(`📷 Total images downloaded: ${products.reduce((sum, p) => sum + p.downloadedImages.length, 0)}`);
         console.log(`🎨 Products with color options: ${products.filter(p => p.colorOptions.length > 0).length}`);
+        console.log(`📂 Products with categories: ${products.filter(p => p.category).length}`);
+        
+        // Show categories found
+        const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
+        if (categories.length > 0) {
+            console.log(`🏷️ Categories found: ${categories.join(', ')}`);
+        }
         
         // Show first few products as examples
-        console.log('\n📝 Sample products:');
+        console.log('\n📝 Sample accessories:');
         products.slice(0, 5).forEach((product, index) => {
             console.log(`${index + 1}. ${product.name} - ${product.price} (${product.downloadedImages.length} images, ${product.colorOptions.length} colors)`);
+            if (product.category) {
+                console.log(`   Category: ${product.category}`);
+            }
         });
         
         if (products.length > 5) {
-            console.log(`... and ${products.length - 5} more products`);
+            console.log(`... and ${products.length - 5} more accessories`);
         }
 
     } catch (error) {
@@ -366,4 +419,4 @@ function downloadImage(url, filepath) {
 }
 
 // Run the scraper
-scrapeAldoWomen();
+scrapeAldoAccessories();
