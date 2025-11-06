@@ -34,11 +34,6 @@ export default function Collection() {
         case 'new-arrivals':
           filtered = filtered.slice(0, 8);
           break;
-        case 'stranger-things':
-        case 'womens-stranger-things':
-        case 'mens-stranger-things':
-          filtered = filtered.slice(0, 6);
-          break;
         case 'womens-boots':
           filtered = filtered.filter(p => p.category === 'womens' && p.subcategory === 'boots');
           break;
@@ -74,7 +69,6 @@ export default function Collection() {
       'heels': 'Heels Collection',
       'bags': 'Bags & Accessories',
       'new-arrivals': 'New Arrivals',
-      'stranger-things': 'Stranger Things x ALDO',
       'womens-boots': "Women's Boots",
       'mens-boots': "Men's Boots",
     };
@@ -92,7 +86,6 @@ export default function Collection() {
       'heels': 'Elevate your style with our elegant heels',
       'bags': 'Complete your look with our stylish bags',
       'new-arrivals': 'Check out our latest products',
-      'stranger-things': 'Limited edition collaboration collection',
     };
 
     return descriptions[collection || ''] || '';
@@ -120,106 +113,106 @@ export default function Collection() {
           <p style={{ fontSize: '16px', color: '#666' }}>{getCollectionDescription()}</p>
         </div>
 
-        {/* Filter and Sort Bar */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '30px',
-          padding: '20px',
-          backgroundColor: '#f5f5f5',
-          borderRadius: '4px'
-        }} className="filter-sort-bar">
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: '10px 20px',
-              backgroundColor: '#fff',
-              border: '1px solid #e0e0e0',
-              borderRadius: '4px',
-              fontSize: '14px',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
-            }}
-          >
-            <i className="fas fa-filter"></i>
-            Filter
-          </button>
+                {/* Filter and Sort Bar */}
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '30px',
+                  padding: '20px',
+                  backgroundColor: '#f5f5f5',
+                  borderRadius: '4px'
+                }} className="filter-sort-bar">
+                  <button
+                    onClick={() => setShowFilters(!showFilters)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '10px 20px',
+                      backgroundColor: '#fff',
+                      border: '1px solid #e0e0e0',
+                      borderRadius: '4px',
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    <i className="fas fa-filter"></i>
+                    Filter
+                  </button>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <label style={{ fontSize: '14px' }}>Sort by:</label>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              style={{
-                padding: '8px 12px',
-                border: '1px solid #e0e0e0',
-                borderRadius: '4px',
-                fontSize: '14px',
-                backgroundColor: '#fff'
-              }}
-            >
-              <option value="featured">Featured</option>
-              <option value="price-low">Price: Low to High</option>
-              <option value="price-high">Price: High to Low</option>
-              <option value="newest">Newest</option>
-            </select>
-          </div>
-        </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <label style={{ fontSize: '14px' }}>Sort by:</label>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                      style={{
+                        padding: '8px 12px',
+                        border: '1px solid #e0e0e0',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        backgroundColor: '#fff'
+                      }}
+                    >
+                      <option value="featured">Featured</option>
+                      <option value="price-low">Price: Low to High</option>
+                      <option value="price-high">Price: High to Low</option>
+                      <option value="newest">Newest</option>
+                    </select>
+                  </div>
+                </div>
 
-        {/* Filter Sidebar */}
-        {showFilters && (
-          <div style={{
-            backgroundColor: '#f5f5f5',
-            padding: '20px',
-            borderRadius: '4px',
-            marginBottom: '30px'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
-              <h3>Filters</h3>
-              <button
-                onClick={() => setShowFilters(false)}
-                style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}
-              >
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-            <p style={{ fontSize: '14px', color: '#666' }}>
-              Filter options would appear here in a production application.
-            </p>
-          </div>
-        )}
+                {/* Filter Sidebar */}
+                {showFilters && (
+                  <div style={{
+                    backgroundColor: '#f5f5f5',
+                    padding: '20px',
+                    borderRadius: '4px',
+                    marginBottom: '30px'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
+                      <h3>Filters</h3>
+                      <button
+                        onClick={() => setShowFilters(false)}
+                        style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}
+                      >
+                        <i className="fas fa-times"></i>
+                      </button>
+                    </div>
+                    <p style={{ fontSize: '14px', color: '#666' }}>
+                      Filter options would appear here in a production application.
+                    </p>
+                  </div>
+                )}
 
-        {/* Products Grid */}
-        {filteredProducts.length > 0 ? (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-            gap: '30px'
-          }}>
-            {filteredProducts.map(product => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        ) : (
-          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-            <h2 style={{ fontSize: '28px', marginBottom: '15px' }}>No products found</h2>
-            <p style={{ fontSize: '16px', color: '#666', marginBottom: '30px' }}>
-              Try adjusting your filters or browse other collections.
-            </p>
-            <Link to="/" className="btn-primary">View All Products</Link>
-          </div>
-        )}
+                {/* Products Grid */}
+                {filteredProducts.length > 0 ? (
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                    gap: '30px'
+                  }}>
+                    {filteredProducts.map(product => (
+                      <ProductCard key={product.id} product={product} />
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+                    <h2 style={{ fontSize: '28px', marginBottom: '15px' }}>No products found</h2>
+                    <p style={{ fontSize: '16px', color: '#666', marginBottom: '30px' }}>
+                      Try adjusting your filters or browse other collections.
+                    </p>
+                    <Link to="/" className="btn-primary">View All Products</Link>
+                  </div>
+                )}
 
-        {/* Load More Button */}
-        {filteredProducts.length > 12 && (
-          <div style={{ textAlign: 'center', marginTop: '40px' }}>
-            <button className="btn-secondary">Load More</button>
-          </div>
-        )}
+                {/* Load More Button */}
+                {filteredProducts.length > 12 && (
+                  <div style={{ textAlign: 'center', marginTop: '40px' }}>
+                    <button className="btn-secondary">Load More</button>
+                  </div>
+                )}
       </div>
     </main>
   );
