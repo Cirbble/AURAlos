@@ -1,0 +1,503 @@
+const puppeteer = require('puppeteer');
+const fs = require('fs');
+const path = require('path');
+const https = require('https');
+
+async function scrapeAldoHandbags() {
+    const browser = await puppeteer.launch({
+        headless: false,
+        defaultViewport: { width: 1920, height: 1080 },
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+
+    const page = await browser.newPage();
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+
+    try {
+        console.log('🚀 Navigating to Aldo women\'s handbags collection...');
+        await page.goto('https://www.aldoshoes.com/en-ca/collections/womens-handbags', { 
+            waitUntil: 'networkidle2', 
+            timeout: 30000 
+        });
+
+        // Handle cookies
+        try {
+            await page.waitForSelector('#onetrust-accept-btn-handler', { timeout: 5000 });
+            await page.click('#onetrust-accept-btn-handler');
+            console.log('✓ Accepted cookies');
+            await page.waitForTimeout(2000);
+        } catch (e) {
+            console.log('No cookie banner found');
+        }
+
+        // Wait for page to load completely
+        await page.waitForTimeout(5000);
+
+        console.log('📄 Finding all product links across all pages...');
+        
+        // Load all pages and collect all product links
+        const productLinks = await loadAllPages(page, 'https://www.aldoshoes.com/en-ca/collections/womens-handbags');
+
+        console.log(`🎯 Found ${productLinks.length} total product links across all pages`);
+
+        if (productLinks.length === 0) {
+            console.log('❌ No product links found');
+            await page.screenshot({ path: 'debug_collection_page.png', fullPage: true });
+            return;
+        }
+
+        // Create images directory
+        const imageDir = path.join(__dirname, 'images');
+        if (!fs.existsSync(imageDir)) {
+            fs.mkdirSync(imageDir, { recursive: true });
+        }
+
+        const products = [];
+
+        for (let i = 0; i < productLinks.length; i++) {
+            const productUrl = productLinks[i];
+            const progress = ((i + 1) / productLinks.length * 100).toFixed(1);
+            console.log(`\n🔍 Scraping product ${i + 1}/${productLinks.length} (${progress}%)`);
+            console.log(`URL: ${productUrl}`);
+
+            try {
+                await page.goto(productUrl, { waitUntil: 'networkidle2', timeout: 30000 });
+                await page.waitForTimeout(3000);
+
+                const productData = await page.evaluate(() => {
+                    // Clean function to get text content without extra whitespace
+                    function cleanText(element) {
+                        if (!element) return null;
+                        return element.textContent?.trim().replace(/\s+/g, ' ') || null;
+                    }
+
+                    // Get product name from h1 or title
+                    let name = null;
+                    const h1 = document.querySelector('h1');
+                    if (h1) {
+                        name = cleanText(h1);
+                    }
+                    
+                    // If name is too long or contains weird content, try to extract just the product name
+                    if (name && name.length > 100) {
+                        const titleMatch = document.title.match(/^([^|]+)/);
+                        if (titleMatch) {
+                            name = titleMatch[1].trim();
+                        }
+                    }
+
+                    // Get price - look for elements containing $ and numbers
+                    let price = null;
+                    const priceElements = Array.from(document.querySelectorAll('*'))
+                        .filter(el => {
+                            const text = el.textContent;
+                            return text && 
+                                   text.includes('$') && 
+                                   text.match(/\$\d+/) &&
+                                   text.length < 50 && // Avoid long text blocks
+                                   !text.toLowerCase().includes('shipping') &&
+                                   !text.toLowerCase().includes('free');
+                        })
+                        .sort((a, b) => a.textContent.length - b.textContent.length); // Prefer shorter text
+
+                    if (priceElements.length > 0) {
+                        const priceText = cleanText(priceElements[0]);
+                        const priceMatch = priceText?.match(/\$[\d,]+(?:\.\d{2})?/);
+                        if (priceMatch) {
+                            price = priceMatch[0];
+                        }
+                    }
+
+                    // Get product images
+                    const images = Array.from(document.querySelectorAll('img'))
+                        .map(img => img.src)
+                        .filter(src => src && 
+                                      src.startsWith('http') && 
+                                      !src.includes('logo') && 
+                                      !src.includes('icon') &&
+                                      (src.includes('aldo') || src.includes('product') || src.includes('cdn')))
+                        .slice(0, 8); // Get more images for handbags
+
+                    // Try to find color options
+                    const colorOptions = [];
+                    
+                    // Look for color swatches or variant options
+                    const colorElements = Array.from(document.querySelectorAll('*'))
+                        .filter(el => {
+                            const className = el.className;
+                            const dataAttrs = el.dataset;
+                            return (typeof className === 'string' && 
+                                   (className.includes('color') || 
+                                    className.includes('swatch') || 
+                                    className.includes('variant'))) ||
+                                   dataAttrs.color ||
+                                   dataAttrs.variant;
+                        });
+
+                    for (const el of colorElements) {
+                        const colorName = el.dataset.color || 
+                                         el.getAttribute('title') || 
+                                         el.getAttribute('alt') ||
+                                         cleanText(el);
+                        
+                        if (colorName && 
+                            colorName.length > 0 && 
+                            colorName.length < 30 && 
+                            !colorName.includes('$') &&
+                            !colorOptions.includes(colorName)) {
+                            colorOptions.push(colorName);
+                        }
+                    }
+
+                    // Try to get bag type/style
+                    let bagType = null;
+                    const bagTypeKeywords = ['tote', 'crossbody', 'shoulder', 'clutch', 'backpack', 'satchel', 'hobo', 'messenger'];
+                    
+                    // Check in product name first
+                    if (name) {
+                        const nameLower = name.toLowerCase();
+                        for (const keyword of bagTypeKeywords) {
+                            if (nameLower.includes(keyword)) {
+                                bagType = keyword.charAt(0).toUpperCase() + keyword.slice(1);
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // If not found in name, check other elements
+                    if (!bagType) {
+                        const typeSelectors = [
+                            '.product-type',
+                            '.bag-type',
+                            '.style-type',
+                            '.breadcrumb',
+                            '[data-testid="product-type"]'
+                        ];
+                        
+                        for (const selector of typeSelectors) {
+                            const element = document.querySelector(selector);
+                            if (element && element.textContent?.trim()) {
+                                const text = cleanText(element).toLowerCase();
+                                for (const keyword of bagTypeKeywords) {
+                                    if (text.includes(keyword)) {
+                                        bagType = keyword.charAt(0).toUpperCase() + keyword.slice(1);
+                                        break;
+                                    }
+                                }
+                                if (bagType) break;
+                            }
+                        }
+                    }
+
+                    // Try to get dimensions or size info
+                    let dimensions = null;
+                    const dimensionSelectors = [
+                        '.dimensions',
+                        '.size-info',
+                        '.product-dimensions',
+                        '.measurements',
+                        '[data-testid="dimensions"]'
+                    ];
+                    
+                    for (const selector of dimensionSelectors) {
+                        const element = document.querySelector(selector);
+                        if (element && element.textContent?.trim()) {
+                            dimensions = cleanText(element);
+                            if (dimensions && dimensions.length > 100) {
+                                dimensions = dimensions.substring(0, 100) + '...';
+                            }
+                            break;
+                        }
+                    }
+                    
+                    // Try to get material info
+                    let material = null;
+                    const materialSelectors = [
+                        '.material',
+                        '.product-material',
+                        '.fabric',
+                        '.composition',
+                        '[data-testid="material"]'
+                    ];
+                    
+                    for (const selector of materialSelectors) {
+                        const element = document.querySelector(selector);
+                        if (element && element.textContent?.trim()) {
+                            material = cleanText(element);
+                            if (material && material.length > 100) {
+                                material = material.substring(0, 100) + '...';
+                            }
+                            break;
+                        }
+                    }
+
+                    // Try to get product description
+                    let description = null;
+                    const descriptionSelectors = [
+                        '.product-description',
+                        '.product-details',
+                        '.description',
+                        '[data-testid="product-description"]',
+                        '.pdp-description'
+                    ];
+                    
+                    for (const selector of descriptionSelectors) {
+                        const element = document.querySelector(selector);
+                        if (element && element.textContent?.trim()) {
+                            description = cleanText(element);
+                            if (description && description.length > 200) {
+                                description = description.substring(0, 200) + '...';
+                            }
+                            break;
+                        }
+                    }
+
+                    return {
+                        name: name,
+                        price: price,
+                        images: images,
+                        colorOptions: colorOptions,
+                        bagType: bagType,
+                        dimensions: dimensions,
+                        material: material,
+                        description: description,
+                        url: window.location.href
+                    };
+                });
+
+                // Clean up the data
+                if (productData.name && productData.name.length > 100) {
+                    // Try to extract just the product name from long titles
+                    const words = productData.name.split(' ');
+                    productData.name = words.slice(0, 4).join(' '); // Take first 4 words for handbags
+                }
+
+                console.log(`Product: ${productData.name || 'Unknown'}`);
+                console.log(`Price: ${productData.price || 'No price found'}`);
+                console.log(`Bag Type: ${productData.bagType || 'No type found'}`);
+                console.log(`Material: ${productData.material || 'No material found'}`);
+                console.log(`Images: ${productData.images.length}`);
+                console.log(`Colors: ${productData.colorOptions.length}`);
+
+                if (productData.name || productData.price) {
+                    // Download images
+                    const downloadedImages = [];
+                    for (let j = 0; j < productData.images.length; j++) {
+                        try {
+                            const imageUrl = productData.images[j];
+                            const extension = imageUrl.split('.').pop().split('?')[0] || 'jpg';
+                            const safeName = productData.name ? 
+                                productData.name.replace(/[^a-z0-9]/gi, '_').toLowerCase() : 
+                                `handbag_${i + 1}`;
+                            const filename = `${safeName}_${j + 1}.${extension}`;
+                            
+                            await downloadImage(imageUrl, path.join(imageDir, filename));
+                            downloadedImages.push(filename);
+                            console.log(`  📷 Downloaded: ${filename}`);
+                        } catch (error) {
+                            console.log(`  ❌ Failed to download image ${j + 1}: ${error.message}`);
+                        }
+                    }
+
+                    products.push({
+                        name: productData.name,
+                        price: productData.price,
+                        url: productData.url,
+                        images: productData.images,
+                        colorOptions: productData.colorOptions,
+                        bagType: productData.bagType,
+                        dimensions: productData.dimensions,
+                        material: productData.material,
+                        description: productData.description,
+                        downloadedImages: downloadedImages
+                    });
+
+                    console.log(`✅ Successfully scraped: ${productData.name}`);
+                } else {
+                    console.log(`⚠ No valid data found for this product`);
+                }
+
+                // Save progress every 10 products
+                if ((i + 1) % 10 === 0) {
+                    const progressFile = path.join(__dirname, 'aldo_handbags_products_progress.json');
+                    fs.writeFileSync(progressFile, JSON.stringify(products, null, 2));
+                    console.log(`💾 Progress saved: ${products.length} products`);
+                }
+
+                // Delay between requests
+                await page.waitForTimeout(2000);
+
+            } catch (error) {
+                console.log(`❌ Error scraping ${productUrl}: ${error.message}`);
+            }
+        }
+
+        // Save results
+        const outputFile = path.join(__dirname, 'aldo_handbags_products_full.json');
+        fs.writeFileSync(outputFile, JSON.stringify(products, null, 2));
+        console.log(`\n🎉 Scraping completed! Saved ${products.length} products to ${outputFile}`);
+        console.log(`📁 Images saved to: ${imageDir}`);
+
+        // Print summary
+        console.log('\n📊 Final Summary:');
+        console.log(`✅ Total handbags scraped: ${products.length}`);
+        console.log(`📷 Total images downloaded: ${products.reduce((sum, p) => sum + p.downloadedImages.length, 0)}`);
+        console.log(`🎨 Products with color options: ${products.filter(p => p.colorOptions.length > 0).length}`);
+        console.log(`👜 Products with bag type: ${products.filter(p => p.bagType).length}`);
+        console.log(`📏 Products with dimensions: ${products.filter(p => p.dimensions).length}`);
+        console.log(`🧵 Products with material info: ${products.filter(p => p.material).length}`);
+        
+        // Show bag types found
+        const bagTypes = [...new Set(products.map(p => p.bagType).filter(Boolean))];
+        if (bagTypes.length > 0) {
+            console.log(`👜 Bag types found: ${bagTypes.join(', ')}`);
+        }
+        
+        // Show materials found
+        const materials = [...new Set(products.map(p => p.material).filter(Boolean))];
+        if (materials.length > 0) {
+            console.log(`🧵 Materials found: ${materials.slice(0, 5).join(', ')}${materials.length > 5 ? '...' : ''}`);
+        }
+        
+        // Show first few products as examples
+        console.log('\n📝 Sample handbags:');
+        products.slice(0, 5).forEach((product, index) => {
+            console.log(`${index + 1}. ${product.name} - ${product.price} (${product.downloadedImages.length} images, ${product.colorOptions.length} colors)`);
+            if (product.bagType) {
+                console.log(`   Type: ${product.bagType}`);
+            }
+            if (product.material) {
+                console.log(`   Material: ${product.material.substring(0, 50)}${product.material.length > 50 ? '...' : ''}`);
+            }
+        });
+        
+        if (products.length > 5) {
+            console.log(`... and ${products.length - 5} more handbags`);
+        }
+
+    } catch (error) {
+        console.error('❌ Scraping failed:', error);
+        await page.screenshot({ path: 'error_screenshot.png', fullPage: true });
+    } finally {
+        await browser.close();
+    }
+}
+
+async function autoScroll(page) {
+    await page.evaluate(async () => {
+        await new Promise((resolve) => {
+            let totalHeight = 0;
+            const distance = 100;
+            const timer = setInterval(() => {
+                const scrollHeight = document.body.scrollHeight;
+                window.scrollBy(0, distance);
+                totalHeight += distance;
+
+                if (totalHeight >= scrollHeight) {
+                    clearInterval(timer);
+                    resolve();
+                }
+            }, 100);
+        });
+    });
+    
+    // Wait for any lazy-loaded content
+    await page.waitForTimeout(3000);
+    console.log('✓ Finished scrolling');
+}
+
+async function loadAllPages(page, baseUrl) {
+    const allProductLinks = new Set();
+    let currentPage = 1;
+    let hasMorePages = true;
+
+    while (hasMorePages) {
+        const pageUrl = currentPage === 1 ? baseUrl : `${baseUrl}?page=${currentPage}`;
+        console.log(`📄 Loading page ${currentPage}: ${pageUrl}`);
+        
+        try {
+            await page.goto(pageUrl, { waitUntil: 'networkidle2', timeout: 30000 });
+            await page.waitForTimeout(3000);
+            
+            // Scroll to load all products on this page
+            await autoScroll(page);
+            
+            // Get product links from current page
+            const pageLinks = await page.evaluate(() => {
+                const links = Array.from(document.querySelectorAll('a'))
+                    .filter(a => a.href && a.href.includes('/products/'))
+                    .map(a => a.href);
+                return [...new Set(links)]; // Remove duplicates
+            });
+            
+            console.log(`Found ${pageLinks.length} products on page ${currentPage}`);
+            
+            if (pageLinks.length === 0) {
+                console.log('No products found on this page, stopping pagination');
+                hasMorePages = false;
+            } else {
+                // Add new links to our set
+                const initialSize = allProductLinks.size;
+                pageLinks.forEach(link => allProductLinks.add(link));
+                const newLinksAdded = allProductLinks.size - initialSize;
+                
+                console.log(`Added ${newLinksAdded} new products (total: ${allProductLinks.size})`);
+                
+                // Check if we're getting new products or if this might be the last page
+                if (newLinksAdded === 0) {
+                    console.log('No new products found, might be the last page');
+                    hasMorePages = false;
+                } else {
+                    currentPage++;
+                    
+                    // Safety limit to prevent infinite loops
+                    if (currentPage > 20) {
+                        console.log('Reached page limit (20), stopping');
+                        hasMorePages = false;
+                    }
+                }
+            }
+            
+            // Check for "Next" button or pagination indicator
+            const hasNextPage = await page.evaluate(() => {
+                // Look for common pagination patterns
+                const nextButton = document.querySelector('a[aria-label*="Next"], .pagination .next, .pagination-next, [data-testid="pagination-next"]');
+                const paginationLinks = document.querySelectorAll('.pagination a, .page-numbers a');
+                return nextButton && !nextButton.disabled || paginationLinks.length > 0;
+            });
+            
+            if (!hasNextPage && currentPage > 1) {
+                console.log('No next page button found, stopping pagination');
+                hasMorePages = false;
+            }
+            
+        } catch (error) {
+            console.log(`Error loading page ${currentPage}: ${error.message}`);
+            hasMorePages = false;
+        }
+        
+        // Small delay between pages
+        await page.waitForTimeout(2000);
+    }
+    
+    return Array.from(allProductLinks);
+}
+
+function downloadImage(url, filepath) {
+    return new Promise((resolve, reject) => {
+        const file = fs.createWriteStream(filepath);
+        https.get(url, (response) => {
+            response.pipe(file);
+            file.on('finish', () => {
+                file.close();
+                resolve();
+            });
+        }).on('error', (err) => {
+            fs.unlink(filepath, () => {});
+            reject(err);
+        });
+    });
+}
+
+// Run the scraper
+scrapeAldoHandbags();

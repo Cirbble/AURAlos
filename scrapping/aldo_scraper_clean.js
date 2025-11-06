@@ -15,7 +15,7 @@ async function scrapeAldo() {
 
     try {
         console.log('🚀 Navigating to Aldo men\'s collection...');
-        await page.goto('https://www.aldoshoes.com/en-ca/collections/mens', { 
+        await page.goto('https://www.aldoshoes.com/en-ca/collections/mens?fetch.skip=45&fetch.to=90', { 
             waitUntil: 'networkidle2', 
             timeout: 30000 
         });

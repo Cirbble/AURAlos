@@ -15,7 +15,7 @@ async function scrapeAldoWomen() {
 
     try {
         console.log('🚀 Navigating to Aldo women\'s collection...');
-        await page.goto('https://www.aldoshoes.com/en-ca/collections/womens', { 
+        await page.goto('https://www.aldoshoes.com/en-ca/collections/womens?fetch.skip=45&fetch.to=90', { 
             waitUntil: 'networkidle2', 
             timeout: 30000 
         });
