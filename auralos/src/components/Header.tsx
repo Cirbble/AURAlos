@@ -87,14 +87,15 @@ export default function Header() {
         <div style={{
           maxWidth: '1600px',
           margin: '0 auto',
-          padding: '0 40px'
+          padding: '0 20px'
         }}>
           {/* Top Row: Logo + Icons */}
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            height: '65px'
+            height: '65px',
+            paddingLeft: '0px'
           }}>
             {/* Logo - Left */}
             <Link to="/" style={{
@@ -102,7 +103,7 @@ export default function Header() {
               alignItems: 'center',
               textDecoration: 'none'
             }}>
-              <svg width="260" height="50" viewBox="0 0 759.28 137.25" xmlns="http://www.w3.org/2000/svg">
+              <svg width="230" height="44" viewBox="0 0 759.28 137.25" xmlns="http://www.w3.org/2000/svg">
                 <polygon points="254.14 2.95 221.77 2.95 221.76 134.94 365.2 134.94 365.2 105.8 254.14 105.8 254.14 2.95"></polygon>
                 <path d="M530,20.24C514,8.32,491.8,3.62,469.66,3.58H388.11V135.79l81.35,0c22.23,0,44.58-4.71,60.59-16.68,17.27-12.91,27-30.47,27-49.45S547.26,33.15,530,20.24Zm-58.76,86.81H421.28V32.31h49.9c31,0,52.82,16.19,52.83,37.37S502.21,107.05,471.22,107.05Z" transform="translate(0.05 -0.87)"></path>
                 <path d="M0,135.81H37.27l15.16-20.09h98.29l15,20.09h39.07L102.28.89Zm131.57-47H71.63l30-40.39Z" transform="translate(0.05 -0.87)"></path>
@@ -111,7 +112,7 @@ export default function Header() {
             </Link>
 
             {/* Icons - Right */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px', paddingRight: '0px' }}>
               <button
                 onClick={() => setIsSearchOpen(true)}
                 style={{
@@ -183,12 +184,14 @@ export default function Header() {
             alignItems: 'center',
             height: '44px',
             borderBottom: '2px solid #fff',
-            boxShadow: '0 2px 0 0 #fff'
+            boxShadow: '0 2px 0 0 #fff',
+            paddingLeft: '0px',
+            marginTop: '-8px'
           }}>
             <ul style={{
               listStyle: 'none',
               display: 'flex',
-              gap: '36px',
+              gap: '32px',
               margin: 0,
               padding: 0,
               alignItems: 'center'
@@ -214,7 +217,7 @@ export default function Header() {
 }
 
 const mainNavStyle = {
-  fontSize: '15px',
+  fontSize: '14px',
   fontWeight: '500',
   fontFamily: 'Jost, sans-serif',
   color: '#000',
@@ -225,7 +228,7 @@ const mainNavStyle = {
 };
 
 const secondaryNavStyle = {
-  fontSize: '15px',
+  fontSize: '14px',
   fontWeight: '400',
   fontFamily: 'Jost, sans-serif',
   color: '#666',
