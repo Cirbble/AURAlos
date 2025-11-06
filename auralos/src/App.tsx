@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import ProductDetail from './pages/ProductDetail';
 import Collection from './pages/Collection';
 import Cart from './pages/Cart';
+import AICollection from './pages/AICollection';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
               <Route path="/product/:id" element={<ProductDetail />} />
               <Route path="/collection/:collection" element={<Collection />} />
               <Route path="/cart" element={<Cart />} />
+              <Route path="/ai-collection" element={<AICollection />} />
               <Route path="*" element={<Home />} />
             </Routes>
           </div>
