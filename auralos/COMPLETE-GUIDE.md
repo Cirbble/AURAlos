@@ -88,9 +88,9 @@
 aws configure get aws_access_key_id
 aws configure get aws_secret_access_key
 
-# 2. Add them to .env file
-echo "VITE_AWS_ACCESS_KEY_ID=YOUR_KEY_HERE" >> .env
-echo "VITE_AWS_SECRET_ACCESS_KEY=YOUR_SECRET_HERE" >> .env
+# 2. Add them to ..env file
+echo "VITE_AWS_ACCESS_KEY_ID=YOUR_KEY_HERE" >> ..env
+echo "VITE_AWS_SECRET_ACCESS_KEY=YOUR_SECRET_HERE" >> ..env
 ```
 
 **Option B: Create New IAM User**
@@ -99,7 +99,7 @@ echo "VITE_AWS_SECRET_ACCESS_KEY=YOUR_SECRET_HERE" >> .env
 # Run these commands (from API-SETUP.md)
 aws iam create-user --user-name auralos-demo-user
 aws iam create-access-key --user-name auralos-demo-user
-# Copy the keys to .env
+# Copy the keys to ..env
 ```
 
 ### Step 2: Configure S3 Bucket CORS
