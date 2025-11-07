@@ -1,16 +1,11 @@
 import { useState } from 'react';
-import { products } from '../data/products';
-import { uploadImageToS3, validateImageFile, fileToBase64 } from '../services/s3Service';
-import { invokeAgent, generateSessionId } from '../services/bedrockService';
-import type { Product } from '../types/product';
-
-interface AgentProductResult {
-  productId: string;
-  productName: string;
-  reasoning: string;
-  pros: string[];
-  cons: string[];
-}
+import { validateImageFile, fileToBase64 } from '../services/s3Service';
+import { 
+  performHardcodedSearch, 
+  analyzeImageDescription, 
+  generateConversationResponse
+} from '../services/hardcodedSearchService';
+import type { SearchableProduct } from '../utils/productLoader';
 
 type Stage = 'input' | 'conversation' | 'results';
 
@@ -21,7 +16,7 @@ interface ChatMessage {
 }
 
 interface SearchResult {
-  product: Product;
+  product: SearchableProduct;
   matchScore: number;
   reasoning: string;
   pros: string[];
@@ -33,14 +28,14 @@ export default function AICollection() {
   const [stage, setStage] = useState<Stage>('input');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [imageS3Key, setImageS3Key] = useState<string | null>(null);
   const [textPrompt, setTextPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [sessionId] = useState(() => generateSessionId());
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [userMessage, setUserMessage] = useState('');
+  const [imageContext, setImageContext] = useState<string>('');
+  const [isRefined, setIsRefined] = useState(false);
 
   const handleImageUpload = async (files: File[]) => {
     setError(null);
@@ -70,40 +65,25 @@ export default function AICollection() {
     };
     setChatMessages([loadingMessage]);
 
-    // Upload to S3 and get AI description
+    // Analyze image using hardcoded logic
     setIsLoading(true);
     try {
-      // Upload to S3 first
-      const uploadResult = await uploadImageToS3(file);
-      if (uploadResult.success) {
-        setImageS3Key(uploadResult.s3Key);
+      // Simulate processing time
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Get image analysis
+      const analysis = analyzeImageDescription(file.name);
+      setImageContext(analysis.suggestedSearchTerms.join(' '));
 
-        // Ask the Bedrock agent to describe the image
-        const descriptionPrompt = `A user just uploaded an image to s3://${import.meta.env.VITE_S3_BUCKET}/${uploadResult.s3Key}. 
-        
-Please analyze this image and provide a brief, friendly description of what you see. Focus on:
-- What type of product/accessory it is
-- Key visual features (color, style, design elements)
-- The general category (shoes, bag, jewelry, etc.)
-
-Keep it conversational and under 2-3 sentences. Then ask what they're looking for.
-
-Example format: "I can see you've uploaded [description of item]. [Notable feature]. Tell me more about what you're looking for! What style, price range, or specific features are you interested in?"`;
-
-        const response = await invokeAgent(descriptionPrompt, sessionId, uploadResult.s3Key);
-
-        // Replace loading message with AI description
-        const descriptionMessage: ChatMessage = {
-          role: 'assistant',
-          content: response.text,
-          timestamp: Date.now()
-        };
-        setChatMessages([descriptionMessage]);
-      } else {
-        throw new Error('Failed to upload image');
-      }
+      // Replace loading message with description
+      const descriptionMessage: ChatMessage = {
+        role: 'assistant',
+        content: `${analysis.description} Tell me more about what you're looking for! What style, price range, or specific features are you interested in?`,
+        timestamp: Date.now()
+      };
+      setChatMessages([descriptionMessage]);
     } catch (err) {
-      console.error('Error getting image description:', err);
+      console.error('Error analyzing image:', err);
       // Fallback to generic message
       const fallbackMessage: ChatMessage = {
         role: 'assistant',
@@ -124,56 +104,17 @@ Example format: "I can see you've uploaded [description of item]. [Notable featu
 
     setIsLoading(true);
     setError(null);
+    setIsRefined(false); // Reset refined state for new search
 
     try {
-      // Upload image to S3 if present and not already uploaded
-      let s3Key: string | undefined = imageS3Key || undefined;
-      if (selectedFile && !imageS3Key) {
-        const uploadResult = await uploadImageToS3(selectedFile);
-        if (!uploadResult.success) {
-          throw new Error(uploadResult.error || 'Failed to upload image');
-        }
-        s3Key = uploadResult.s3Key;
-        setImageS3Key(s3Key);
-      }
-
-      // Create search query asking for top 3 results with pros/cons in JSON format
-      const searchQuery = `Find the top 3 products that match this request: "${textPrompt.trim() || 'products similar to the uploaded image'}". 
+      // Simulate processing time
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-Return ONLY a JSON array with exactly 3 products in this format:
-[
-  {
-    "productId": "product-id",
-    "productName": "Product Name",
-    "reasoning": "Why this product matches the search",
-    "pros": ["Pro 1", "Pro 2", "Pro 3"],
-    "cons": ["Con 1", "Con 2"]
-  }
-]
+      // Perform hardcoded search
+      const searchQuery = textPrompt.trim() || 'fashion accessories';
+      const results = performHardcodedSearch(searchQuery, imageContext, isRefined);
 
-Important: Return ONLY the JSON array, no other text.`;
-
-      // Invoke Bedrock agent
-      const response = await invokeAgent(searchQuery, sessionId, s3Key);
-
-      // Parse the JSON response to get top 3 results
-      const resultsData = parseAgentResponse(response.text);
-
-      // Map results to actual products from our catalog
-      const mappedResults: SearchResult[] = resultsData.map((result: AgentProductResult) => {
-        // Find matching product (for now, use mock data - in production, match by ID)
-        const product = products[Math.floor(Math.random() * products.length)];
-
-        return {
-          product,
-          matchScore: 0.95,
-          reasoning: result.reasoning || 'This product matches your search criteria',
-          pros: result.pros || ['Great quality', 'Stylish design', 'Comfortable fit'],
-          cons: result.cons || ['Limited color options', 'Slightly above budget']
-        };
-      });
-
-      setSearchResults(mappedResults.slice(0, 3)); // Ensure only top 3
+      setSearchResults(results);
       setStage('results');
 
     } catch (err) {
@@ -194,52 +135,32 @@ Important: Return ONLY the JSON array, no other text.`;
       timestamp: Date.now()
     };
     setChatMessages(prev => [...prev, newUserMessage]);
+    const currentMessage = userMessage;
     setUserMessage('');
     setIsLoading(true);
 
     try {
-      // Upload image to S3 if not already uploaded (for agent to reference)
-      if (selectedFile && !imageS3Key) {
-        try {
-          const uploadResult = await uploadImageToS3(selectedFile);
-          if (uploadResult.success) {
-            setImageS3Key(uploadResult.s3Key);
-          }
-        } catch (uploadErr) {
-          console.warn('S3 upload failed, continuing without S3 storage:', uploadErr);
-        }
-      }
-
+      // Simulate processing time
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
       // Build conversation history for context
       const conversationHistory = chatMessages
-        .map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
-        .filter(msg => msg); // Remove empty messages
+        .filter(msg => msg.role === 'user')
+        .map(msg => msg.content);
 
-      // Build message for agent
-      const fullMessage = `
-${selectedImage ? 'User uploaded an image of a fashion product/accessory.' : ''}
-Previous conversation:
-${conversationHistory.join('\n')}
-
-User's new message: ${userMessage}
-
-Please respond naturally and ask clarifying questions to help narrow down the perfect product. When you have enough information, say "I have enough information to show you the perfect matches!" and I'll show the results.`;
-
-      // Use Bedrock agent
-      const response = await invokeAgent(fullMessage, sessionId, imageS3Key || undefined);
+      // Generate response using hardcoded logic
+      const response = generateConversationResponse(currentMessage, conversationHistory);
 
       // Add AI response to chat
       const aiMessage: ChatMessage = {
         role: 'assistant',
-        content: response.text,
+        content: response,
         timestamp: Date.now()
       };
       setChatMessages(prev => [...prev, aiMessage]);
 
-      // Check if AI is ready to show results
-      if (response.text.toLowerCase().includes('perfect matches') ||
-          response.text.toLowerCase().includes('show you') ||
-          response.text.toLowerCase().includes('ready to search')) {
+      // Check if AI is ready to show results (after a few exchanges)
+      if (conversationHistory.length >= 2 && response.includes('perfect matches')) {
         // Trigger search with accumulated context
         setTimeout(() => {
           handleSearchFromConversation();
@@ -249,7 +170,7 @@ Please respond naturally and ask clarifying questions to help narrow down the pe
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to send message');
       // Re-add the message input if there was an error
-      setUserMessage(newUserMessage.content);
+      setUserMessage(currentMessage);
     } finally {
       setIsLoading(false);
     }
@@ -259,54 +180,20 @@ Please respond naturally and ask clarifying questions to help narrow down the pe
     setIsLoading(true);
 
     try {
-      // Upload image to S3 if not already uploaded
-      let s3KeyToUse = imageS3Key;
-      if (selectedFile && !imageS3Key) {
-        try {
-          const uploadResult = await uploadImageToS3(selectedFile);
-          if (uploadResult.success) {
-            s3KeyToUse = uploadResult.s3Key;
-            setImageS3Key(uploadResult.s3Key);
-          }
-        } catch (uploadErr) {
-          console.warn('S3 upload failed, continuing without image context:', uploadErr);
-        }
-      }
-
+      // Simulate processing time
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       // Build search query from entire conversation
       const conversationSummary = chatMessages
         .filter(msg => msg.role === 'user')
         .map(msg => msg.content)
         .join(' ');
 
-      const searchQuery = `Based on the uploaded image and user's requirements: "${conversationSummary}". 
-      
-Find the top 3 products that match. Return ONLY a JSON array:
-[
-  {
-    "productId": "product-id",
-    "productName": "Product Name",
-    "reasoning": "Why this product matches the search",
-    "pros": ["Pro 1", "Pro 2", "Pro 3"],
-    "cons": ["Con 1", "Con 2"]
-  }
-]`;
+      // Perform hardcoded search with conversation context
+      const searchQuery = conversationSummary || 'fashion accessories';
+      const results = performHardcodedSearch(searchQuery, imageContext, isRefined);
 
-      const response = await invokeAgent(searchQuery, sessionId, s3KeyToUse || undefined);
-      const resultsData = parseAgentResponse(response.text);
-
-      const mappedResults: SearchResult[] = resultsData.map((result: AgentProductResult) => {
-        const product = products[Math.floor(Math.random() * products.length)];
-        return {
-          product,
-          matchScore: 0.95,
-          reasoning: result.reasoning || 'This product matches your search criteria',
-          pros: result.pros || ['Great quality', 'Stylish design', 'Comfortable fit'],
-          cons: result.cons || ['Limited color options', 'Slightly above budget']
-        };
-      });
-
-      setSearchResults(mappedResults.slice(0, 3));
+      setSearchResults(results);
       setStage('results');
 
     } catch (err) {
@@ -317,44 +204,34 @@ Find the top 3 products that match. Return ONLY a JSON array:
     }
   };
 
-  // Helper function to parse agent JSON response
-  const parseAgentResponse = (responseText: string): AgentProductResult[] => {
-    try {
-      // Try to extract JSON array from response
-      const jsonMatch = responseText.match(/\[[^\]]*]/);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
-      }
+  const handleRefineSearch = async () => {
+    setIsLoading(true);
 
-      // If no JSON found, return mock data for top 3
-      return [
-        {
-          productId: '1',
-          productName: 'Product 1',
-          reasoning: 'Matches your style preferences',
-          pros: ['High quality materials', 'Versatile design', 'Comfortable'],
-          cons: ['Limited availability']
-        },
-        {
-          productId: '2',
-          productName: 'Product 2',
-          reasoning: 'Great alternative option',
-          pros: ['Affordable price', 'Popular choice', 'Durable'],
-          cons: ['May run small']
-        },
-        {
-          productId: '3',
-          productName: 'Product 3',
-          reasoning: 'Similar aesthetic',
-          pros: ['Trendy style', 'Multiple colors', 'Free shipping'],
-          cons: ['Slightly over budget']
-        }
-      ];
-    } catch (error) {
-      console.error('Failed to parse response:', error);
-      return [];
+    try {
+      // Wait 2 seconds before showing refined results
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Toggle to refined results
+      setIsRefined(true);
+      
+      // Perform refined search
+      const searchQuery = textPrompt.trim() || 'fashion accessories';
+      const results = performHardcodedSearch(searchQuery, imageContext, true);
+
+      setSearchResults(results);
+      
+      // Scroll to top of page
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    } catch (err) {
+      console.error('Refine error:', err);
+      setError(err instanceof Error ? err.message : 'An error occurred during refinement');
+    } finally {
+      setIsLoading(false);
     }
   };
+
+
 
   return (
     <main>
@@ -1247,12 +1124,19 @@ Find the top 3 products that match. Return ONLY a JSON array:
                         {index + 1}
                       </div>
                       <img
-                        src={result.product.image}
+                        src={result.product.localImages[0] || result.product.images[0]}
                         alt={result.product.name}
                         style={{
                           width: '100%',
                           height: 'auto',
                           display: 'block'
+                        }}
+                        onError={(e) => {
+                          // Fallback to original image if local image fails
+                          const target = e.target as HTMLImageElement;
+                          if (target.src !== result.product.images[0]) {
+                            target.src = result.product.images[0];
+                          }
                         }}
                       />
                     </div>
@@ -1276,7 +1160,7 @@ Find the top 3 products that match. Return ONLY a JSON array:
                         margin: '0 0 16px 0',
                         color: '#000'
                       }}>
-                        ${result.product.price}
+                        {result.product.price}
                       </p>
 
                       {/* Reasoning */}
@@ -1376,7 +1260,7 @@ Find the top 3 products that match. Return ONLY a JSON array:
                       {/* View Button */}
                       <button
                         onClick={() => {
-                          window.open(`https://www.aldoshoes.com/us/en_US/search?q=${encodeURIComponent(result.product.name)}`, '_blank');
+                          window.open(result.product.url, '_blank');
                         }}
                         style={{
                           width: '100%',
@@ -1469,9 +1353,11 @@ Find the top 3 products that match. Return ONLY a JSON array:
                   }}
                 />
                 <button
+                  onClick={handleRefineSearch}
+                  disabled={isLoading}
                   style={{
                     padding: '12px 24px',
-                    backgroundColor: '#000',
+                    backgroundColor: isLoading ? '#666' : '#000',
                     color: '#fff',
                     border: 'none',
                     borderRadius: '4px',
@@ -1480,18 +1366,40 @@ Find the top 3 products that match. Return ONLY a JSON array:
                     fontFamily: 'Jost, sans-serif',
                     textTransform: 'uppercase',
                     letterSpacing: '0.5px',
-                    cursor: 'pointer',
+                    cursor: isLoading ? 'not-allowed' : 'pointer',
                     transition: 'all 0.2s ease',
-                    whiteSpace: 'nowrap'
+                    whiteSpace: 'nowrap',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#333';
+                    if (!isLoading) {
+                      e.currentTarget.style.backgroundColor = '#333';
+                    }
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = '#000';
+                    if (!isLoading) {
+                      e.currentTarget.style.backgroundColor = '#000';
+                    }
                   }}
                 >
-                  Refine →
+                  {isLoading ? (
+                    <>
+                      <div style={{
+                        width: '16px',
+                        height: '16px',
+                        border: '2px solid #fff',
+                        borderTop: '2px solid transparent',
+                        borderRadius: '50%',
+                        animation: 'spin 1s linear infinite'
+                      }} />
+                      Refining...
+                    </>
+                  ) : (
+                    'Refine →'
+                  )}
                 </button>
               </div>
             </div>
