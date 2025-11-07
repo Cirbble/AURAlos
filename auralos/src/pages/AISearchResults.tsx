@@ -41,21 +41,6 @@ export default function AISearchResults() {
   const [openEndedAnswer, setOpenEndedAnswer] = useState('');
   const [refinementRound, setRefinementRound] = useState(0);
   const [directRefinementInput, setDirectRefinementInput] = useState('');
-  const [dotCount, setDotCount] = useState(0);
-
-  // Animated dots for loading
-  useEffect(() => {
-    if (!isLoadingQuestion) {
-      setDotCount(0);
-      return;
-    }
-
-    const interval = setInterval(() => {
-      setDotCount(prev => (prev + 1) % 4); // 0, 1, 2, 3 dots
-    }, 400); // Update every 400ms
-
-    return () => clearInterval(interval);
-  }, [isLoadingQuestion]);
 
   useEffect(() => {
     // Redirect to find-your-fit if no results
@@ -951,30 +936,76 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
                   textAlign: 'center',
                   padding: '40px',
                   color: '#666',
-                  fontFamily: 'Jost, sans-serif'
+                  fontFamily: 'Jost, sans-serif',
+                  display: 'flex',
+                  justifyContent: 'center'
                 }}>
-                  <div style={{ 
-                    fontSize: '16px', 
-                    marginBottom: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '10px'
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    position: 'relative'
                   }}>
-                    <span style={{
-                      width: '16px',
-                      height: '16px',
-                      border: '2px solid #E5E5E5',
-                      borderTop: '2px solid #6366F1',
-                      borderRadius: '50%',
-                      animation: 'spin 1s linear infinite'
-                    }} />
-                    {`Loading${'.'.repeat(dotCount)}`}
+                    <div style={{
+                      position: 'absolute',
+                      width: '100%',
+                      height: '100%',
+                      animation: 'rotate 1.2s linear infinite'
+                    }}>
+                      <div style={{
+                        position: 'absolute',
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        background: '#6366F1',
+                        top: '0',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        opacity: 0.9
+                      }} />
+                    </div>
+                    <div style={{
+                      position: 'absolute',
+                      width: '100%',
+                      height: '100%',
+                      animation: 'rotate 1.2s linear infinite',
+                      animationDelay: '-0.4s'
+                    }}>
+                      <div style={{
+                        position: 'absolute',
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        background: '#6366F1',
+                        top: '0',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        opacity: 0.6
+                      }} />
+                    </div>
+                    <div style={{
+                      position: 'absolute',
+                      width: '100%',
+                      height: '100%',
+                      animation: 'rotate 1.2s linear infinite',
+                      animationDelay: '-0.8s'
+                    }}>
+                      <div style={{
+                        position: 'absolute',
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        background: '#6366F1',
+                        top: '0',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        opacity: 0.3
+                      }} />
+                    </div>
                   </div>
                 </div>
               ) : null}
               <style>{`
-                @keyframes spin {
+                @keyframes rotate {
                   0% { transform: rotate(0deg); }
                   100% { transform: rotate(360deg); }
                 }
@@ -1301,25 +1332,71 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
                   textAlign: 'center',
                   padding: '40px',
                   color: '#666',
-                  fontFamily: 'Jost, sans-serif'
+                  fontFamily: 'Jost, sans-serif',
+                  display: 'flex',
+                  justifyContent: 'center'
                 }}>
-                  <div style={{ 
-                    fontSize: '16px', 
-                    marginBottom: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '10px'
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    position: 'relative'
                   }}>
-                    <span style={{
-                      width: '16px',
-                      height: '16px',
-                      border: '2px solid #E5E5E5',
-                      borderTop: '2px solid #6366F1',
-                      borderRadius: '50%',
-                      animation: 'spin 1s linear infinite'
-                    }} />
-                    {`Loading${'.'.repeat(dotCount)}`}
+                    <div style={{
+                      position: 'absolute',
+                      width: '100%',
+                      height: '100%',
+                      animation: 'rotate 1.2s linear infinite'
+                    }}>
+                      <div style={{
+                        position: 'absolute',
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        background: '#6366F1',
+                        top: '0',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        opacity: 0.9
+                      }} />
+                    </div>
+                    <div style={{
+                      position: 'absolute',
+                      width: '100%',
+                      height: '100%',
+                      animation: 'rotate 1.2s linear infinite',
+                      animationDelay: '-0.4s'
+                    }}>
+                      <div style={{
+                        position: 'absolute',
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        background: '#6366F1',
+                        top: '0',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        opacity: 0.6
+                      }} />
+                    </div>
+                    <div style={{
+                      position: 'absolute',
+                      width: '100%',
+                      height: '100%',
+                      animation: 'rotate 1.2s linear infinite',
+                      animationDelay: '-0.8s'
+                    }}>
+                      <div style={{
+                        position: 'absolute',
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        background: '#6366F1',
+                        top: '0',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        opacity: 0.3
+                      }} />
+                    </div>
                   </div>
                 </div>
               ) : null}

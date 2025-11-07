@@ -67,7 +67,6 @@ export default function AICollection() {
   const [isFocused, setIsFocused] = useState(false);
   const [imageSpecifications, setImageSpecifications] = useState('');
   const [bdaMetadata, setBdaMetadata] = useState<BDAImageMetadata | null>(null);
-  const [dotCount, setDotCount] = useState(0);
 
   const placeholders = [
     "black leather combat boots with lug soles for winter",
@@ -102,20 +101,6 @@ export default function AICollection() {
 
     return () => clearInterval(interval);
   }, [placeholders.length, textPrompt]);
-
-  // Animated dots for loading
-  useEffect(() => {
-    if (!isLoading) {
-      setDotCount(0);
-      return;
-    }
-
-    const interval = setInterval(() => {
-      setDotCount(prev => (prev + 1) % 4); // 0, 1, 2, 3 dots
-    }, 400); // Update every 400ms
-
-    return () => clearInterval(interval);
-  }, [isLoading]);
 
   // Helper function for STRICT product matching - NO FALLBACKS
   const findBestProductMatch = (productName: string): Product | undefined => {
@@ -897,18 +882,81 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                   if (!isLoading) e.currentTarget.style.backgroundColor = '#000';
                 }}
               >
-                {isLoading && (
-                  <span style={{
-                    width: '14px',
-                    height: '14px',
-                    border: '2px solid #ffffff40',
-                    borderTop: '2px solid #fff',
-                    borderRadius: '50%',
-                    animation: 'spin 1s linear infinite'
-                  }} />
+                {isLoading ? (
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    position: 'relative'
+                  }}>
+                    <div style={{
+                      position: 'absolute',
+                      width: '100%',
+                      height: '100%',
+                      animation: 'rotate 1.2s linear infinite'
+                    }}>
+                      <div style={{
+                        position: 'absolute',
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        background: '#fff',
+                        top: '0',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        opacity: 0.9
+                      }} />
+                    </div>
+                    <div style={{
+                      position: 'absolute',
+                      width: '100%',
+                      height: '100%',
+                      animation: 'rotate 1.2s linear infinite',
+                      animationDelay: '-0.4s'
+                    }}>
+                      <div style={{
+                        position: 'absolute',
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        background: '#fff',
+                        top: '0',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        opacity: 0.6
+                      }} />
+                    </div>
+                    <div style={{
+                      position: 'absolute',
+                      width: '100%',
+                      height: '100%',
+                      animation: 'rotate 1.2s linear infinite',
+                      animationDelay: '-0.8s'
+                    }}>
+                      <div style={{
+                        position: 'absolute',
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        background: '#fff',
+                        top: '0',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        opacity: 0.3
+                      }} />
+                    </div>
+                  </div>
+                ) : (
+                  'Search'
                 )}
-                {isLoading ? `Searching${'.'.repeat(dotCount)}` : 'Search'}
               </button>
+              {isLoading && (
+                <style>{`
+                  @keyframes rotate {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                  }
+                `}</style>
+              )}
             </div>
           )}
         </div>
@@ -1184,18 +1232,72 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                   }
                 }}
               >
-                {isLoading && (
-                  <span style={{
-                    width: '14px',
-                    height: '14px',
-                    border: '2px solid #ffffff40',
-                    borderTop: '2px solid #fff',
-                    borderRadius: '50%',
-                    animation: 'spin 1s linear infinite',
-                    marginRight: '10px'
-                  }} />
+                {isLoading ? (
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    position: 'relative'
+                  }}>
+                    <div style={{
+                      position: 'absolute',
+                      width: '100%',
+                      height: '100%',
+                      animation: 'rotate 1.2s linear infinite'
+                    }}>
+                      <div style={{
+                        position: 'absolute',
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        background: '#fff',
+                        top: '0',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        opacity: 0.9
+                      }} />
+                    </div>
+                    <div style={{
+                      position: 'absolute',
+                      width: '100%',
+                      height: '100%',
+                      animation: 'rotate 1.2s linear infinite',
+                      animationDelay: '-0.4s'
+                    }}>
+                      <div style={{
+                        position: 'absolute',
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        background: '#fff',
+                        top: '0',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        opacity: 0.6
+                      }} />
+                    </div>
+                    <div style={{
+                      position: 'absolute',
+                      width: '100%',
+                      height: '100%',
+                      animation: 'rotate 1.2s linear infinite',
+                      animationDelay: '-0.8s'
+                    }}>
+                      <div style={{
+                        position: 'absolute',
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        background: '#fff',
+                        top: '0',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        opacity: 0.3
+                      }} />
+                    </div>
+                  </div>
+                ) : (
+                  'Start AI Search'
                 )}
-                {isLoading ? `Searching${'.'.repeat(dotCount)}` : 'Start AI Search'}
                 </button>
           </div>
         </div>
@@ -1229,30 +1331,80 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
               {!bdaMetadata ? (
                 <span style={{ 
                   display: 'flex', 
+                  flexDirection: 'column',
                   alignItems: 'center', 
-                  gap: '8px',
-                  color: '#999' 
+                  gap: '16px',
+                  color: '#999',
+                  justifyContent: 'center'
                 }}>
-                  <span className="analyzing-spinner" style={{
-                    width: '16px',
-                    height: '16px',
-                    border: '2px solid #E5E5E5',
-                    borderTop: '2px solid #000',
-                    borderRadius: '50%',
-                    animation: 'spin 1s linear infinite'
-                  }} />
-                  Analyzing image...
+                  <div style={{
+                    width: '36px',
+                    height: '36px',
+                    position: 'relative'
+                  }}>
+                    <div style={{
+                      position: 'absolute',
+                      width: '100%',
+                      height: '100%',
+                      animation: 'rotate 1.2s linear infinite'
+                    }}>
+                      <div style={{
+                        position: 'absolute',
+                        width: '7px',
+                        height: '7px',
+                        borderRadius: '50%',
+                        background: '#999',
+                        top: '0',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        opacity: 0.9
+                      }} />
+                    </div>
+                    <div style={{
+                      position: 'absolute',
+                      width: '100%',
+                      height: '100%',
+                      animation: 'rotate 1.2s linear infinite',
+                      animationDelay: '-0.4s'
+                    }}>
+                      <div style={{
+                        position: 'absolute',
+                        width: '7px',
+                        height: '7px',
+                        borderRadius: '50%',
+                        background: '#999',
+                        top: '0',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        opacity: 0.6
+                      }} />
+                    </div>
+                    <div style={{
+                      position: 'absolute',
+                      width: '100%',
+                      height: '100%',
+                      animation: 'rotate 1.2s linear infinite',
+                      animationDelay: '-0.8s'
+                    }}>
+                      <div style={{
+                        position: 'absolute',
+                        width: '7px',
+                        height: '7px',
+                        borderRadius: '50%',
+                        background: '#999',
+                        top: '0',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        opacity: 0.3
+                      }} />
+                    </div>
+                  </div>
+                  <span>Analyzing image</span>
                 </span>
               ) : (
                 'Add any specifications or details to refine your search'
               )}
             </p>
-            <style>{`
-              @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-              }
-            `}</style>
 
             {/* Main Layout: Image + Input */}
                   <div style={{
@@ -1407,17 +1559,72 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                     if (!isLoading) e.currentTarget.style.backgroundColor = '#000';
                   }}
                 >
-                    {isLoading && (
-                      <span style={{
-                        width: '14px',
-                        height: '14px',
-                        border: '2px solid #ffffff40',
-                        borderTop: '2px solid #fff',
-                        borderRadius: '50%',
-                        animation: 'spin 1s linear infinite'
-                      }} />
+                    {isLoading ? (
+                      <div style={{
+                        width: '32px',
+                        height: '32px',
+                        position: 'relative'
+                      }}>
+                        <div style={{
+                          position: 'absolute',
+                          width: '100%',
+                          height: '100%',
+                          animation: 'rotate 1.2s linear infinite'
+                        }}>
+                          <div style={{
+                            position: 'absolute',
+                            width: '6px',
+                            height: '6px',
+                            borderRadius: '50%',
+                            background: '#fff',
+                            top: '0',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            opacity: 0.9
+                          }} />
+                        </div>
+                        <div style={{
+                          position: 'absolute',
+                          width: '100%',
+                          height: '100%',
+                          animation: 'rotate 1.2s linear infinite',
+                          animationDelay: '-0.4s'
+                        }}>
+                          <div style={{
+                            position: 'absolute',
+                            width: '6px',
+                            height: '6px',
+                            borderRadius: '50%',
+                            background: '#fff',
+                            top: '0',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            opacity: 0.6
+                          }} />
+                        </div>
+                        <div style={{
+                          position: 'absolute',
+                          width: '100%',
+                          height: '100%',
+                          animation: 'rotate 1.2s linear infinite',
+                          animationDelay: '-0.8s'
+                        }}>
+                          <div style={{
+                            position: 'absolute',
+                            width: '6px',
+                            height: '6px',
+                            borderRadius: '50%',
+                            background: '#fff',
+                            top: '0',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            opacity: 0.3
+                          }} />
+                        </div>
+                      </div>
+                    ) : (
+                      'Find Products'
                     )}
-                    {isLoading ? `Searching${'.'.repeat(dotCount)}` : 'Find Products'}
                 </button>
               </div>
 
