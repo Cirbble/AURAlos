@@ -54,46 +54,11 @@ export default function AICollection() {
     const preview = await fileToBase64(file);
     setSelectedImage(preview);
 
-    // Move to conversation stage immediately
-    setStage('conversation');
+    // Get image analysis for context (but don't show it to user)
+    const analysis = analyzeImageDescription(file.name);
+    setImageContext(analysis.suggestedSearchTerms.join(' '));
 
-    // Show initial loading message
-    const loadingMessage: ChatMessage = {
-      role: 'assistant',
-      content: '✓ Image uploaded! Let me take a look at what you\'ve shared...',
-      timestamp: Date.now()
-    };
-    setChatMessages([loadingMessage]);
-
-    // Analyze image using hardcoded logic
-    setIsLoading(true);
-    try {
-      // Simulate processing time
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Get image analysis
-      const analysis = analyzeImageDescription(file.name);
-      setImageContext(analysis.suggestedSearchTerms.join(' '));
-
-      // Replace loading message with description
-      const descriptionMessage: ChatMessage = {
-        role: 'assistant',
-        content: `${analysis.description} Tell me more about what you're looking for! What style, price range, or specific features are you interested in?`,
-        timestamp: Date.now()
-      };
-      setChatMessages([descriptionMessage]);
-    } catch (err) {
-      console.error('Error analyzing image:', err);
-      // Fallback to generic message
-      const fallbackMessage: ChatMessage = {
-        role: 'assistant',
-        content: `✓ I can see you've uploaded an image${file.name ? ` (${file.name})` : ''}. Tell me more about what you're looking for! What style, price range, or specific features are you interested in?`,
-        timestamp: Date.now()
-      };
-      setChatMessages([fallbackMessage]);
-    } finally {
-      setIsLoading(false);
-    }
+    // Stay on input stage - just display the uploaded image
   };
 
   const handleStartSearch = async () => {
