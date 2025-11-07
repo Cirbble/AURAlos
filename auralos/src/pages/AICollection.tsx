@@ -178,31 +178,48 @@ export default function AICollection() {
     // Background processing - upload and analyze
     (async () => {
       try {
+        console.log('🚀 Starting background image upload and analysis...');
+
         // Step 1: Upload to S3
-      const uploadResult = await uploadImageToS3(file);
-      if (!uploadResult.success) {
-        throw new Error(uploadResult.error || 'Failed to upload image');
-      }
+        console.log('📤 Uploading image to S3...');
+        const uploadResult = await uploadImageToS3(file);
+        if (!uploadResult.success) {
+          throw new Error(uploadResult.error || 'Failed to upload image');
+        }
 
-      const s3Key = uploadResult.s3Key;
+        const s3Key = uploadResult.s3Key;
         setImageS3Key(s3Key);
+        console.log('✅ Image uploaded to S3:', s3Key);
 
-        // Step 2: Analyze with BDA
-      const bdaResult = await analyzeImageWithBDA(s3Key);
+        // Step 2: Analyze with BDA/Claude Vision
+        console.log('🔍 Starting image analysis with Claude Vision...');
+        console.log('⏱️  This may take 20-40 seconds...');
+        const startTime = Date.now();
 
-      if (!bdaResult.success || !bdaResult.metadata) {
-        throw new Error(bdaResult.error || 'Failed to analyze image');
-      }
+        const bdaResult = await analyzeImageWithBDA(s3Key);
 
-      const metadata = bdaResult.metadata;
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+        console.log(`⏱️  Analysis took ${elapsed}s`);
+
+        if (!bdaResult.success || !bdaResult.metadata) {
+          const errorMsg = bdaResult.error || 'Failed to analyze image';
+          console.error('❌ BDA analysis failed:', errorMsg);
+          throw new Error(errorMsg);
+        }
+
+        const metadata = bdaResult.metadata;
+        console.log('✅ Image analysis successful:', metadata);
 
         // Store metadata
         window.__bdaMetadata = metadata;
         setBdaMetadata(metadata);
+        console.log('✅ Metadata stored and ready for search');
 
       } catch (err) {
-        console.error('❌ Error analyzing image:', err);
-        setError(err instanceof Error ? err.message : 'Background analysis failed. You can still search.');
+        console.error('❌ Error in background image analysis:', err);
+        const errorMsg = err instanceof Error ? err.message : 'Background analysis failed';
+        setError(`${errorMsg} You can still try text search.`);
+        // Don't set bdaMetadata, which will cause handleImageSearch to timeout with helpful message
       }
     })();
   };
@@ -215,17 +232,25 @@ export default function AICollection() {
       let metadata = bdaMetadata;
       if (!metadata) {
         console.log('⏳ Waiting for image analysis to complete...');
-        // Wait up to 30 seconds for metadata
-        for (let i = 0; i < 60; i++) {
+        // Wait up to 60 seconds for metadata (increased from 30)
+        // Claude Vision can take 20-40 seconds for analysis
+        for (let i = 0; i < 120; i++) {
           await new Promise(resolve => setTimeout(resolve, 500));
           if (bdaMetadata) {
             metadata = bdaMetadata;
+            console.log('✅ Image analysis completed after', (i * 0.5).toFixed(1), 'seconds');
             break;
+          }
+
+          // Log progress every 5 seconds
+          if (i > 0 && i % 10 === 0) {
+            console.log(`⏳ Still analyzing... ${i * 0.5}s elapsed`);
           }
         }
         
         if (!metadata) {
-          throw new Error('Image analysis timed out. Please try again.');
+          console.error('❌ Image analysis timed out after 60 seconds');
+          throw new Error('Image analysis is taking longer than expected. Please try with a different image or use text search instead.');
         }
       }
 

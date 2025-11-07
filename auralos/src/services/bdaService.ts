@@ -46,7 +46,14 @@ export async function analyzeImageWithBDA(s3Key: string): Promise<BDAAnalysisRes
     console.log('Using Claude Vision for image analysis...');
     console.log('Fetching image from S3...');
 
-    const metadata = await analyzeWithClaudeVision(bucket, s3Key);
+    // Add timeout wrapper - 45 seconds max for Claude Vision
+    const timeoutPromise = new Promise<BDAImageMetadata>((_, reject) => {
+      setTimeout(() => reject(new Error('Claude Vision API call timed out after 45 seconds')), 45000);
+    });
+
+    const analysisPromise = analyzeWithClaudeVision(bucket, s3Key);
+
+    const metadata = await Promise.race([analysisPromise, timeoutPromise]);
 
     console.log('Claude Vision analysis complete:', metadata);
     console.log('=========================================');
