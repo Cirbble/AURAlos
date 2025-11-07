@@ -41,6 +41,29 @@ export default function AISearchResults() {
   const [openEndedAnswer, setOpenEndedAnswer] = useState('');
   const [refinementRound, setRefinementRound] = useState(0);
   const [directRefinementInput, setDirectRefinementInput] = useState('');
+  const [loadingMessage, setLoadingMessage] = useState(0);
+
+  const loadingMessages = [
+    "🔍 Analyzing your preferences...",
+    "✨ Matching with our catalog...",
+    "🎨 Finding perfect styles...",
+    "💡 Calculating best matches...",
+    "🎯 Almost there..."
+  ];
+
+  // Loading message rotation
+  useEffect(() => {
+    if (!isLoadingQuestion) {
+      setLoadingMessage(0);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setLoadingMessage(prev => (prev + 1) % loadingMessages.length);
+    }, 2000); // Rotate every 2 seconds
+
+    return () => clearInterval(interval);
+  }, [isLoadingQuestion, loadingMessages.length]);
 
   useEffect(() => {
     // Redirect to find-your-fit if no results
@@ -938,12 +961,32 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
                   color: '#666',
                   fontFamily: 'Jost, sans-serif'
                 }}>
-                  <div style={{ fontSize: '16px', marginBottom: '12px' }}>
-                    Analyzing your preferences...
+                  <div style={{ 
+                    fontSize: '16px', 
+                    marginBottom: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px'
+                  }}>
+                    <span style={{
+                      width: '16px',
+                      height: '16px',
+                      border: '2px solid #E5E5E5',
+                      borderTop: '2px solid #6366F1',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }} />
+                    {loadingMessages[loadingMessage]}
                   </div>
-                  <div style={{ fontSize: '24px' }}>🤔</div>
                 </div>
               ) : null}
+              <style>{`
+                @keyframes spin {
+                  0% { transform: rotate(0deg); }
+                  100% { transform: rotate(360deg); }
+                }
+              `}</style>
 
               {/* Guided Mode - Question */}
               {refinementMode === 'guided' && currentQuestion && !isLoadingQuestion ? (
@@ -1268,10 +1311,24 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
                   color: '#666',
                   fontFamily: 'Jost, sans-serif'
                 }}>
-                  <div style={{ fontSize: '16px', marginBottom: '12px' }}>
-                    Finding products that match your request...
+                  <div style={{ 
+                    fontSize: '16px', 
+                    marginBottom: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px'
+                  }}>
+                    <span style={{
+                      width: '16px',
+                      height: '16px',
+                      border: '2px solid #E5E5E5',
+                      borderTop: '2px solid #6366F1',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }} />
+                    {loadingMessages[loadingMessage]}
                   </div>
-                  <div style={{ fontSize: '24px' }}>🔍</div>
                 </div>
               ) : null}
 
