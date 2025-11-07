@@ -7,6 +7,7 @@ import ProductDetail from './pages/ProductDetail';
 import Collection from './pages/Collection';
 import Cart from './pages/Cart';
 import AICollection from './pages/AICollection';
+import AISearchResults from './pages/AISearchResults';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
               <Route path="/collection/:collection" element={<Collection />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/find-your-fit" element={<AICollection />} />
+              <Route path="/ai-search-results" element={<AISearchResults />} />
               <Route path="*" element={<Home />} />
             </Routes>
           </div>

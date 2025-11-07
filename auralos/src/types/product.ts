@@ -9,6 +9,7 @@ export interface Product {
   colors: string[];
   sizes: string[];
   image: string;
+  url?: string;
   badge?: string;
   promo?: string;
   description: string;

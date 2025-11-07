@@ -6,20 +6,9 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  return (
-    <Link
-      to={`/product/${product.id}`}
-      style={{
-        backgroundColor: '#fff',
-        borderRadius: '4px',
-        overflow: 'hidden',
-        textDecoration: 'none',
-        color: '#333',
-        transition: 'box-shadow 0.3s ease',
-        display: 'block'
-      }}
-      className="product-card"
-    >
+  // Link to ALDO product page if URL exists, otherwise internal page
+  const cardContent = (
+    <>
       <div style={{ position: 'relative', overflow: 'hidden', aspectRatio: '3/4' }}>
         {product.badge && (
           <div style={{
@@ -67,6 +56,41 @@ export default function ProductCard({ product }: ProductCardProps) {
           </p>
         )}
       </div>
+    </>
+  );
+
+  const cardStyle = {
+    backgroundColor: '#fff',
+    borderRadius: '4px',
+    overflow: 'hidden',
+    textDecoration: 'none',
+    color: '#333',
+    transition: 'box-shadow 0.3s ease',
+    display: 'block'
+  };
+
+  // If product has ALDO URL, link externally, otherwise link internally
+  if (product.url) {
+    return (
+      <a
+        href={product.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={cardStyle}
+        className="product-card"
+      >
+        {cardContent}
+      </a>
+    );
+  }
+
+  return (
+    <Link
+      to={`/product/${product.id}`}
+      style={cardStyle}
+      className="product-card"
+    >
+      {cardContent}
     </Link>
   );
 }

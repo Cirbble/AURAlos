@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { products } from '../data/products';
 import { uploadImageToS3, validateImageFile, fileToBase64 } from '../services/s3Service';
 import { invokeAgent, generateSessionId } from '../services/bedrockService';
 import { analyzeImageWithBDA, formatBDAMetadataForAgent } from '../services/bdaService';
+import type { AgentMessage } from '../services/bedrockService';
 import type { Product } from '../types/product';
 import type { BDAImageMetadata } from '../services/bdaService';
 
@@ -15,20 +17,29 @@ declare global {
 }
 
 interface AgentProductResult {
-  productId: string;
-  productName: string;
-  reasoning: string;
-  pros: string[];
-  cons: string[];
+  productId?: string;
+  productName?: string;
+  name?: string;
+  product_name?: string;
+  score?: number;
+  reasoning?: string;
+  pros?: string[];
+  cons?: string[];
+  // Additional fields that might come from Knowledge Base
+  type?: string;
+  price?: number;
+  category?: string;
+  subcategory?: string;
+  color?: string;
+  colors?: string[];
+  sizes?: string[];
+  image?: string;
+  description?: string;
+  features?: string[];
+  [key: string]: any; // Allow any other fields
 }
 
-type Stage = 'input' | 'conversation' | 'results';
-
-interface ChatMessage {
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: number;
-}
+type Stage = 'input' | 'conversation';
 
 interface SearchResult {
   product: Product;
@@ -39,16 +50,105 @@ interface SearchResult {
 }
 
 export default function AICollection() {
+  const navigate = useNavigate();
+  
   // State management
   const [stage, setStage] = useState<Stage>('input');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imageS3Key, setImageS3Key] = useState<string | null>(null);
   const [textPrompt, setTextPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [sessionId] = useState(() => generateSessionId());
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [userMessage, setUserMessage] = useState('');
+  const [sessionId, setSessionId] = useState(() => generateSessionId());
+  const [messages, setMessages] = useState<AgentMessage[]>([]);
+  const [userInput, setUserInput] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isFocused, setIsFocused] = useState(false);
+
+  const placeholders = [
+    "black leather boots",
+    "white sneakers",
+    "heeled sandals",
+    "crossbody bags",
+    "ankle boots",
+    "loafers",
+    "platform heels",
+    "tote bags",
+    "mules",
+    "oxfords"
+  ];
+
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+
+  // Auto-scroll to bottom of chat
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Carousel animation
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPlaceholderIndex(prev => (prev + 1) % placeholders.length);
+    }, 2500);
+
+    return () => clearInterval(interval);
+  }, [placeholders.length]);
+
+  // Helper function for STRICT product matching - NO FALLBACKS
+  const findBestProductMatch = (productName: string): Product | undefined => {
+    console.log(`🔍 STRICT MATCHING for: "${productName}"`);
+    const productNameLower = productName.toLowerCase();
+    
+    // Try exact match first
+    let product = products.find(p => 
+      p.name.toLowerCase() === productNameLower
+    );
+    
+    if (product) {
+      console.log(`✅ EXACT MATCH: "${product.name}"`);
+      return product;
+    }
+    
+    // Color-aware matching ONLY - no vague matches
+    const colorWords = ['black', 'white', 'brown', 'green', 'blue', 'red', 'pink', 'grey', 'gray', 'beige', 'burgundy', 'navy', 'tan', 'cognac', 'emerald', 'dark', 'light', 'other', 'cognac', 'bordo', 'ice'];
+    const hasColorInSearch = colorWords.some(color => productNameLower.includes(color));
+    
+    if (hasColorInSearch) {
+      // Extract base product name (first word)
+      const baseNameMatch = productNameLower.split(/[\s\(]/)[0];
+      
+      // Find ALL products with matching base name
+      const matchingBaseProducts = products.filter(p => 
+        p.name.toLowerCase().includes(baseNameMatch)
+      );
+      
+      console.log(`📋 Found ${matchingBaseProducts.length} products with base name "${baseNameMatch}":`, 
+        matchingBaseProducts.map(p => p.name));
+      
+      // Find product with BOTH base name AND color match
+      product = matchingBaseProducts.find(p => {
+        const pNameLower = p.name.toLowerCase();
+        
+        // Check if any color from search appears in product name
+        const matchingColor = colorWords.find(color => 
+          productNameLower.includes(color) && pNameLower.includes(color)
+        );
+        
+        if (matchingColor) {
+          console.log(`✅ COLOR MATCH: "${p.name}" (matched on color: ${matchingColor})`);
+          return true;
+        }
+        return false;
+      });
+      
+      if (product) return product;
+    }
+    
+    // NO FALLBACK - return undefined if no good match
+    console.error(`❌ NO MATCH FOUND for "${productName}" - refusing to show wrong product`);
+    return undefined;
+  };
 
   const handleImageUpload = async (files: File[]) => {
     setError(null);
@@ -61,55 +161,55 @@ export default function AICollection() {
       return;
     }
 
+    setSelectedFile(file);
 
-    // Create preview for UI (this is just for display, not analysis)
+    // Create preview
     const preview = await fileToBase64(file);
     setSelectedImage(preview);
 
-    // Move to conversation stage immediately
+    setIsLoading(true);
     setStage('conversation');
 
-    // Show initial loading message
-    const loadingMessage: ChatMessage = {
-      role: 'assistant',
-      content: '✓ Image uploaded! BDA is analyzing your image... This may take 10-20 seconds.',
-      timestamp: Date.now()
-    };
-    setChatMessages([loadingMessage]);
-
-    // TRUE BDA WORKFLOW: Upload to S3 first, then analyze from S3
-    setIsLoading(true);
     try {
-      // Step 1: Upload to S3 (true BDA workflow)
+      // Step 1: Upload to S3
       const uploadResult = await uploadImageToS3(file);
       if (!uploadResult.success) {
         throw new Error(uploadResult.error || 'Failed to upload image');
       }
 
       const s3Key = uploadResult.s3Key;
+      setImageS3Key(s3Key);
 
-      // Step 2: Analyze with BDA - fetches from S3, not base64!
-      // This is the true BDA workflow: S3 -> Analysis -> Structured Metadata
+      // Show initial message
+      const initialMsg: AgentMessage = {
+        role: 'agent',
+        content: '✓ Image uploaded! Analyzing with AI... This may take 10-20 seconds.',
+        timestamp: Date.now()
+      };
+      setMessages([initialMsg]);
+
+      // Step 2: Analyze with BDA
       const bdaResult = await analyzeImageWithBDA(s3Key);
 
       if (!bdaResult.success || !bdaResult.metadata) {
         throw new Error(bdaResult.error || 'Failed to analyze image');
       }
 
-      // Step 3: Format the BDA metadata into a friendly description
       const metadata = bdaResult.metadata;
-      const descriptionParts = [];
 
+      // Store metadata globally
+      window.__bdaMetadata = metadata;
+
+      // Show analysis to user
+      const descriptionParts = [];
       if (metadata.name) {
         descriptionParts.push(`**${metadata.name}**`);
       } else if (metadata.product_type) {
         descriptionParts.push(`a ${metadata.product_type}`);
       }
-
       if (metadata.primary_color) {
         descriptionParts.push(`in ${metadata.primary_color}`);
       }
-
       if (metadata.material) {
         descriptionParts.push(`made of ${metadata.material}`);
       }
@@ -118,41 +218,185 @@ export default function AICollection() {
         ? descriptionParts.join(' ')
         : 'your uploaded image';
 
-      // Step 4: Show BDA analysis to user and ask for additional description
-      const analysisMessage: ChatMessage = {
-        role: 'assistant',
-        content: `✓ I analyzed your image: ${descriptionText}!${metadata.description ? `\n\n${metadata.description}` : ''}\n\nWould you like to add any additional details about what you're looking for? For example:\n• Price range\n• Specific style preferences\n• Occasion or use case\n\nOr just type "search" to find similar products now!`,
+      const analysisMessage: AgentMessage = {
+        role: 'agent',
+        content: `✓ I analyzed your image: ${descriptionText}!\n\nSearching for matching products...`,
         timestamp: Date.now()
       };
-      setChatMessages([analysisMessage]);
+      setMessages([analysisMessage]);
 
-      // Store metadata for agent - will be used when user sends message
-      window.__bdaMetadata = metadata;
+      // Step 3: AUTONOMOUS MODE - Invoke agent with userIntent: "auto_match"
+      // Format request for autonomous product matching
+      const autonomousRequest = {
+        userIntent: "auto_match",
+        bdaMetadata: metadata,
+        formattedMetadata: formatBDAMetadataForAgent(metadata)
+      };
+
+      const descriptionForPrompt = metadata.product_type ? 
+        `${metadata.primary_color || ''} ${metadata.material || ''} ${metadata.product_type}`.trim() : 
+        'the uploaded image';
+
+      const agentPrompt = `${JSON.stringify(autonomousRequest, null, 2)}
+
+CRITICAL INSTRUCTIONS - YOU MUST RETURN 3 PRODUCTS:
+
+1. The user uploaded an image showing: ${descriptionForPrompt}
+   - Product category from image: ${metadata.product_category || 'unknown'}
+   - Product type from image: ${metadata.product_type || 'unknown'}
+
+2. **PRIORITY MATCHING RULES (CRITICAL)**:
+   - IF user uploaded SHOES/BOOTS → Find ONLY shoes/boots (same category)
+   - IF user uploaded BAGS → Find ONLY bags (same category)
+   - IF user uploaded ACCESSORIES → Find ONLY accessories (same category)
+   - IF user uploaded CLOTHING/DRESS → Find complementary shoes, bags, OR accessories
+   
+3. Search the knowledge base (ALDO shoes, bags, accessories only)
+
+4. **SAME CATEGORY FIRST**: If the uploaded item is a shoe/bag/accessory from ALDO, prioritize finding the EXACT or SIMILAR items in that category
+   - Example: Boots uploaded → Return boots/shoes ONLY
+   - Example: Bag uploaded → Return bags ONLY
+   - Example: Dress uploaded → Return complementary shoes, bags, or accessories
+
+5. Match criteria:
+   - Match by COLOR (e.g., brown boots → brown boots)
+   - Match by STYLE (e.g., combat boots → similar combat boots)
+   - Match by MATERIAL (e.g., leather → leather products)
+
+6. Return EXACTLY in this JSON format (NO text before or after):
+
+{
+  "results": [
+    {
+      "productName": "Product Name (Color Variant)",
+      "score": 85,
+      "reasoning": "This [bag/shoe/accessory] matches your uploaded ${metadata.product_type || 'item'} because [explain how it's similar or complementary]",
+      "pros": ["Matches the color palette", "Same product category", "Similar style"],
+      "cons": ["Slightly different shade", "Different specific style"]
+    }
+  ]
+}
+
+7. **CRITICAL**: productName MUST include the color variant in parentheses exactly as it appears in the knowledge base
+   - Example: "Samuel (Dark Green)" NOT "Samuel" or "Samuel Green"
+   - Example: "Blyth (Brown)" NOT "Blyth" or "Brown Blyth"
+   - Check the knowledge base for the EXACT format including color in parentheses
+
+8. **YOU MUST return 3 products** - never return empty results array
+9. **RESPECT CATEGORY PRIORITY** - If they uploaded shoes, return ONLY shoes (not bags or accessories)`;
+
+      const agentResponse = await invokeAgent(agentPrompt, sessionId);
+
+      console.log('🤖 Agent Response (Image):', agentResponse.text);
+
+      // Step 4: Parse agent response as JSON - agent returns clean JSON
+      let agentResults: AgentProductResult[] = [];
+      try {
+        console.log('📋 Full image agent response:', agentResponse.text);
+        
+        // Try parsing directly - agent returns clean JSON
+        const trimmed = agentResponse.text.trim();
+        
+        if (trimmed.startsWith('{')) {
+          console.log('✅ Response starts with {, parsing as JSON');
+          const parsed = JSON.parse(trimmed);
+          console.log('📦 Parsed object:', parsed);
+          
+          if (parsed.results && Array.isArray(parsed.results)) {
+            agentResults = parsed.results;
+            console.log('✅ Image agent results array:', agentResults);
+            console.log('🔍 First result structure:', agentResults[0]);
+          } else {
+            console.warn('⚠️ Parsed JSON but no results array found. Keys:', Object.keys(parsed));
+          }
+        } else {
+          // Fallback: extract JSON between first { and last }
+          const firstBrace = trimmed.indexOf('{');
+          const lastBrace = trimmed.lastIndexOf('}');
+          if (firstBrace !== -1 && lastBrace !== -1) {
+            const jsonStr = trimmed.substring(firstBrace, lastBrace + 1);
+            console.log('📄 Extracted JSON string');
+            const parsed = JSON.parse(jsonStr);
+            
+            if (parsed.results && Array.isArray(parsed.results)) {
+              agentResults = parsed.results;
+              console.log('✅ Image agent results array:', agentResults);
+            }
+      } else {
+            console.warn('⚠️ No JSON found in image agent response');
+            console.log('📄 Full raw response:', agentResponse.text);
+          }
+        }
+      } catch (parseError) {
+        console.warn('❌ Could not parse image agent response as JSON:', parseError);
+        console.log('📄 Raw response text:', agentResponse.text);
+      }
+
+      // Step 5: Map to SearchResult format and display
+      if (agentResults.length > 0) {
+        const results: SearchResult[] = agentResults.map((result, index) => {
+          console.log(`Processing image result ${index}:`, result);
+          
+          const productName = result.productName || result.name || result.product_name || result.productId;
+          
+          if (!productName) {
+            throw new Error(`Result ${index} has no product name`);
+          }
+
+          const product = findBestProductMatch(productName);
+
+          if (!product) {
+            console.error(`❌ NO MATCH FOUND - Agent returned: "${productName}"`);
+            throw new Error(`Product "${productName}" not found in catalog. Agent must return products with exact color variants like "Product (Color)".`);
+          }
+
+        return {
+          product,
+            matchScore: result.score || 0,
+            reasoning: result.reasoning || '',
+            pros: result.pros || [],
+            cons: result.cons || []
+        };
+      });
+
+        // Navigate to results page with data
+        navigate('/ai-search-results', { 
+          state: { 
+            searchResults: results,
+            query: 'Visual Search Results'
+          } 
+        });
+      } else {
+        // NO FALLBACKS - Agent must return results or we fail
+        console.error('❌ Agent returned empty results - REFUSING to show fallback products');
+        throw new Error('No matching products found. The agent did not return any results.');
+      }
 
       setIsLoading(false);
 
     } catch (err) {
-      console.error('Error analyzing image with BDA:', err);
-      console.error('Error type:', err instanceof Error ? err.constructor.name : typeof err);
-      console.error('Error message:', err instanceof Error ? err.message : String(err));
-      console.error('Full error:', JSON.stringify(err, Object.getOwnPropertyNames(err)));
+      console.error('Error in autonomous image search:', err);
 
-      // Show error message but allow chat to continue
-      const fallbackMessage: ChatMessage = {
-        role: 'assistant',
-        content: `✓ Image uploaded. There was an issue with analysis. Please try describing what you're looking for.`,
-        timestamp: Date.now()
-      };
-      setChatMessages([fallbackMessage]);
+      const fallbackMessage: AgentMessage = {
+        role: 'agent',
+        content: `✓ Image uploaded and analyzed. I encountered an issue finding matches. Would you like to describe what you're looking for?`,
+          timestamp: Date.now()
+        };
+      setMessages([fallbackMessage]);
 
-      // Keep in conversation stage so user can chat
       setStage('conversation');
-      setError(`Image analysis failed: ${err instanceof Error ? err.message : 'Unknown error'}. You can still chat with me about what you're looking for!`);
-      setIsLoading(false);
+      setError(`Search failed: ${err instanceof Error ? err.message : 'Unknown error'}. You can chat with me to refine your search!`);
+        setIsLoading(false);
     }
   };
 
   const handleStartSearch = async () => {
+    console.log('🔍 handleStartSearch called', { 
+      hasImage: !!selectedImage, 
+      textPrompt: textPrompt.trim(),
+      sessionId 
+    });
+
     if (!selectedImage && !textPrompt.trim()) {
       setError('Please upload an image or enter a description');
       return;
@@ -162,436 +406,403 @@ export default function AICollection() {
     setError(null);
 
     try {
-      // Get BDA metadata if available
-      const bdaMetadata = window.__bdaMetadata;
-
-      // Create search query asking for top 3 results with pros/cons in JSON format
-      let searchQuery = '';
-
-      if (bdaMetadata) {
-        searchQuery = `You are a product search assistant with access to a Knowledge Base containing ALDO product catalog.
-
-IMAGE ANALYSIS FROM BEDROCK DATA AUTOMATION (BDA):
-${formatBDAMetadataForAgent(bdaMetadata)}
-
-USER'S TEXT QUERY: "${textPrompt.trim() || 'No additional query - search based on image only'}"
-
-YOUR TASK:
-1. **Search your Knowledge Base** for ALDO products matching the image analysis
-2. Use vector similarity on: category (${bdaMetadata.product_category}), type (${bdaMetadata.product_type}), color (${bdaMetadata.primary_color}), material (${bdaMetadata.material}), style (${bdaMetadata.style})
-3. Apply user's text query as additional filter
-4. Return top 3 actual products from Knowledge Base
-
-IMPORTANT: Use Knowledge Base retrieval to find real ALDO products. Do not invent product IDs.
-
-Return ONLY valid JSON:
-\`\`\`json
-[
-  {
-    "productId": "real-product-id-from-kb",
-    "productName": "Real Product Name from KB",
-    "reasoning": "Matches image: [explain]",
-    "pros": ["Matches ${bdaMetadata.primary_color} color", "Same ${bdaMetadata.product_type} type", "Similar ${bdaMetadata.style} style"],
-    "cons": ["Minor difference in [attribute]", "Slight variation in [feature]"]
-  }
-]
-\`\`\``;
-      } else {
-        searchQuery = `You are a product search assistant with access to a Knowledge Base containing ALDO product catalog.
-
-USER'S SEARCH REQUEST: "${textPrompt.trim() || 'Show me products'}"
-
-YOUR TASK:
-1. **Search your Knowledge Base** for ALDO products matching the request
-2. Use semantic search on product names, descriptions, and attributes
-3. Return top 3 actual products from Knowledge Base
-
-IMPORTANT: Use Knowledge Base retrieval to find real ALDO products. Do not make up product IDs or names.
-
-Return ONLY valid JSON:
-\`\`\`json
-[
-  {
-    "productId": "real-product-id-from-kb",
-    "productName": "Real Product Name from KB",
-    "reasoning": "This matches because...",
-    "pros": ["Pro 1", "Pro 2", "Pro 3"],
-    "cons": ["Con 1", "Con 2"]
-  }
-]
-\`\`\``;
+      // Upload image to S3 if present and not already uploaded
+      let s3Key: string | undefined = imageS3Key || undefined;
+      if (selectedFile && !imageS3Key) {
+        const uploadResult = await uploadImageToS3(selectedFile);
+        if (!uploadResult.success) {
+          throw new Error(uploadResult.error || 'Failed to upload image');
+        }
+        s3Key = uploadResult.s3Key;
+        setImageS3Key(s3Key);
       }
 
-      // Invoke Bedrock agent - NO S3 KEY! Agent only gets BDA JSON output
-      const response = await invokeAgent(searchQuery, sessionId);
+      // AUTONOMOUS MODE: Request top 3 products directly
+      const searchRequest = {
+        userIntent: "auto_match",
+        textQuery: textPrompt.trim(),
+        ...(window.__bdaMetadata && { bdaMetadata: window.__bdaMetadata })
+      };
 
-      // Parse the JSON response to get top 3 results
-      const resultsData = parseAgentResponse(response.text);
+      const agentPrompt = `${JSON.stringify(searchRequest, null, 2)}
 
-      // Map results to actual products from our catalog
-      const mappedResults: SearchResult[] = resultsData.map((result: AgentProductResult) => {
-        // Find matching product (for now, use mock data - in production, match by ID)
-        const product = products[Math.floor(Math.random() * products.length)];
+IMPORTANT INSTRUCTIONS:
+1. Search the knowledge base for products matching the user's query: "${textPrompt.trim()}"
+2. Return EXACTLY top 3 products in this JSON format:
+
+{
+  "results": [
+    {
+      "productName": "Product Name (Color Variant)",
+      "score": 85,
+      "reasoning": "This matches your search for '${textPrompt.trim()}' because [explain specific connections - mention the product type, how it relates to their query]",
+      "pros": ["Specific benefit 1", "Specific benefit 2", "Specific benefit 3"],
+      "cons": ["Honest difference 1", "Honest difference 2"]
+    }
+  ]
+}
+
+3. **CRITICAL**: productName MUST include the color variant in parentheses exactly as it appears in the knowledge base
+   - Example: "Samuel (Dark Green)" NOT "Samuel" or "Samuel Green"  
+   - Example: "Blyth (Brown)" NOT "Blyth" or "Brown Blyth"
+   - Check the knowledge base for the EXACT format including color in parentheses
+
+4. In the "reasoning" field, ALWAYS start by referencing what they searched for and explain why this product matches it.
+5. Be specific about product attributes (color, material, style, type).`;
+
+      // Invoke Bedrock agent
+      const response = await invokeAgent(agentPrompt, sessionId);
+
+      console.log('🤖 Agent Response:', response.text);
+
+      // Parse JSON results - agent returns clean JSON
+      let agentResults: AgentProductResult[] = [];
+      try {
+        console.log('📋 Full agent response text:', response.text);
+        
+        // Try parsing directly - agent returns clean JSON
+        const trimmed = response.text.trim();
+        
+        if (trimmed.startsWith('{')) {
+          console.log('✅ Response starts with {, parsing as JSON');
+          const parsed = JSON.parse(trimmed);
+          console.log('📦 Parsed object:', parsed);
+          
+          if (parsed.results && Array.isArray(parsed.results)) {
+            agentResults = parsed.results;
+            console.log('✅ Agent results array:', agentResults);
+            console.log('🔍 First result structure:', agentResults[0]);
+          } else {
+            console.warn('⚠️ Parsed JSON but no results array found. Keys:', Object.keys(parsed));
+          }
+        } else {
+          // Fallback: extract JSON between first { and last }
+          const firstBrace = trimmed.indexOf('{');
+          const lastBrace = trimmed.lastIndexOf('}');
+          if (firstBrace !== -1 && lastBrace !== -1) {
+            const jsonStr = trimmed.substring(firstBrace, lastBrace + 1);
+            console.log('📄 Extracted JSON string');
+            const parsed = JSON.parse(jsonStr);
+            
+            if (parsed.results && Array.isArray(parsed.results)) {
+              agentResults = parsed.results;
+              console.log('✅ Agent results array:', agentResults);
+            }
+          } else {
+            console.warn('⚠️ No JSON found in agent response');
+            console.log('📄 Full raw response:', response.text);
+          }
+        }
+      } catch (parseError) {
+        console.warn('❌ Could not parse agent response as JSON:', parseError);
+        console.log('📄 Raw response text:', response.text);
+      }
+
+      // Map to SearchResult format
+      if (agentResults.length > 0) {
+        console.log('🔨 Mapping agent results to products...');
+        const results: SearchResult[] = agentResults.map((result, index) => {
+          console.log(`Processing result ${index}:`, result);
+          console.log(`Available fields:`, Object.keys(result));
+          
+          // Handle different possible field names the agent might use
+          const productName = result.productName || result.name || result.product_name || result.productId;
+          
+          if (!productName) {
+            console.error('❌ No product name field found in result:', result);
+            throw new Error(`Result ${index} has no product name. Available fields: ${Object.keys(result).join(', ')}`);
+          }
+
+          console.log(`🔍 Looking for product with name: "${productName}"`);
+          
+          const product = findBestProductMatch(productName);
+
+          if (!product) {
+            console.error(`❌ NO MATCH FOUND - Agent returned: "${productName}"`);
+            throw new Error(`Product "${productName}" not found in catalog. Agent must return products with exact color variants like "Product (Color)".`);
+          }
+
+          console.log(`✅ MATCHED product:`, product.name);
 
         return {
           product,
-          matchScore: 0.95,
-          reasoning: result.reasoning || 'This product matches your search criteria',
-          pros: result.pros || ['Great quality', 'Stylish design', 'Comfortable fit'],
-          cons: result.cons || ['Limited color options', 'Slightly above budget']
+            matchScore: result.score || 0,
+            reasoning: result.reasoning || '',
+            pros: result.pros || [],
+            cons: result.cons || []
         };
       });
 
-      setSearchResults(mappedResults.slice(0, 3)); // Ensure only top 3
-      setStage('results');
+        console.log('✅ Successfully mapped all results');
+        // Navigate to results page with data
+        navigate('/ai-search-results', { 
+          state: { 
+            searchResults: results,
+            query: textPrompt
+          } 
+        });
+      } else {
+        console.error('❌ NO RESULTS PARSED. Raw agent response was:', response.text);
+        throw new Error(`Agent did not return valid JSON results. Agent said: "${response.text.substring(0, 200)}..."`);
+      }
 
     } catch (err) {
-      console.error('Search error:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred during search');
+      console.error('❌ Search error:', err);
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      setStage('input');
     } finally {
       setIsLoading(false);
+      console.log('✅ Search complete, isLoading set to false');
     }
   };
 
   const handleSendMessage = async () => {
-    if (!userMessage.trim() || isLoading) return;
+    if (!userInput.trim() || isLoading) return;
 
-    // Add user message to chat
-    const newUserMessage: ChatMessage = {
+    const userMessage: AgentMessage = {
       role: 'user',
-      content: userMessage,
+      content: userInput,
       timestamp: Date.now()
     };
-    setChatMessages(prev => [...prev, newUserMessage]);
-    setUserMessage('');
+    setMessages(prev => [...prev, userMessage]);
+    setUserInput('');
     setIsLoading(true);
 
     try {
-      // Get BDA metadata if available
-      const bdaMetadata = window.__bdaMetadata;
+      const response = await invokeAgent(userInput, sessionId);
 
-      // Check if user wants to search immediately (after image upload)
-      const searchKeywords = ['search', 'find', 'show', 'go', 'yes', 'ok'];
-      const shouldSearchNow = bdaMetadata && searchKeywords.some(keyword =>
-        newUserMessage.content.toLowerCase().includes(keyword)
-      );
-
-      if (shouldSearchNow) {
-        // User wants to search with their description
-        const searchingMessage: ChatMessage = {
-          role: 'assistant',
-          content: `Perfect! Searching for products that match your image...`,
-          timestamp: Date.now()
-        };
-        setChatMessages(prev => [...prev, searchingMessage]);
-
-        // Trigger search
-        await handleSearchFromConversation();
-        setIsLoading(false);
-        return;
-      }
-
-      // Build conversation history for context
-      const conversationHistory = chatMessages
-        .map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
-        .filter(msg => msg); // Remove empty messages
-
-      // Build message for agent with BDA metadata ONLY (no S3 key!)
-      // Agent cannot read images - only receives BDA's structured output
-      let fullMessage = '';
-
-      if (bdaMetadata) {
-        // Include BDA analysis in agent context
-        fullMessage = `Image Analysis Results (from BDA):
-${formatBDAMetadataForAgent(bdaMetadata)}
-
-Previous conversation:
-${conversationHistory.join('\n')}
-
-User's new message: ${userMessage}
-
-Please respond naturally and ask clarifying questions to help narrow down the perfect product. When you have enough information, say "I have enough information to show you the perfect matches!" and I'll show the results.`;
-      } else {
-        fullMessage = `
-Previous conversation:
-${conversationHistory.join('\n')}
-
-User's new message: ${userMessage}
-
-Please respond naturally and ask clarifying questions to help narrow down the perfect product. When you have enough information, say "I have enough information to show you the perfect matches!" and I'll show the results.`;
-      }
-
-      // Use Bedrock agent - NO S3 KEY! Agent only gets BDA output
-      const response = await invokeAgent(fullMessage, sessionId);
-
-      // Add AI response to chat
-      const aiMessage: ChatMessage = {
-        role: 'assistant',
+      const agentMessage: AgentMessage = {
+        role: 'agent',
         content: response.text,
         timestamp: Date.now()
       };
-      setChatMessages(prev => [...prev, aiMessage]);
+      setMessages(prev => [...prev, agentMessage]);
 
-      // Check if AI is ready to show results
-      if (response.text.toLowerCase().includes('perfect matches') ||
-          response.text.toLowerCase().includes('show you') ||
-          response.text.toLowerCase().includes('ready to search')) {
-        // Trigger search with accumulated context
-        setTimeout(() => {
-          handleSearchFromConversation();
-        }, 1000);
-      }
-
+      // Note: Conversational flow not fully implemented - autonomous mode navigates directly
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to send message');
-      // Re-add the message input if there was an error
-      setUserMessage(newUserMessage.content);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSearchFromConversation = async () => {
-    setIsLoading(true);
-
-    try {
-      // Get BDA metadata if available
-      const bdaMetadata = window.__bdaMetadata;
-
-      // Build search query from entire conversation
-      const conversationSummary = chatMessages
-        .filter(msg => msg.role === 'user')
-        .map(msg => msg.content)
-        .join(' ');
-
-      let searchQuery = '';
-
-      if (bdaMetadata) {
-        // Use BDA metadata for enhanced search
-        // Agent receives ONLY the structured JSON from BDA, not the image!
-        searchQuery = `You are a product search assistant with access to a Knowledge Base containing ALDO product catalog.
-
-IMAGE ANALYSIS FROM BEDROCK DATA AUTOMATION (BDA):
-${formatBDAMetadataForAgent(bdaMetadata)}
-
-USER'S ADDITIONAL REQUIREMENTS: "${conversationSummary || 'None - just find products matching the image'}"
-
-YOUR TASK:
-1. **Search your Knowledge Base** for ALDO products that match the image analysis above
-2. Use vector similarity search on these attributes:
-   - Product Category: ${bdaMetadata.product_category || 'any'}
-   - Product Type: ${bdaMetadata.product_type || 'any'}  
-   - Primary Color: ${bdaMetadata.primary_color || 'any'}
-   - Material: ${bdaMetadata.material || 'any'}
-   - Style: ${bdaMetadata.style || 'any'}
-   - Tags: ${bdaMetadata.tags?.join(', ') || 'any'}
-   
-3. Apply user's additional requirements as filters
-4. Return the top 3 best matches from your Knowledge Base
-
-IMPORTANT: You MUST use the Knowledge Base retrieval action to search for actual ALDO products. Do not make up product IDs or names.
-
-Return ONLY valid JSON in this exact format:
-\`\`\`json
-[
-  {
-    "productId": "actual-product-id-from-kb",
-    "productName": "Actual Product Name from KB",
-    "reasoning": "This product matches because [explain match to image analysis]",
-    "pros": ["Matches primary color ${bdaMetadata.primary_color}", "Same product type ${bdaMetadata.product_type}", "Similar style ${bdaMetadata.style}"],
-    "cons": ["Slight difference in [attribute]", "May vary in [feature]"]
-  }
-]
-\`\`\``;
-      } else {
-        searchQuery = `You are a product search assistant with access to a Knowledge Base containing ALDO product catalog.
-
-USER'S SEARCH QUERY: "${conversationSummary}"
-
-YOUR TASK:
-1. **Search your Knowledge Base** for ALDO products matching the user's query
-2. Use semantic search and vector similarity
-3. Return the top 3 best matches from your Knowledge Base
-
-IMPORTANT: You MUST use the Knowledge Base retrieval action to search for actual ALDO products. Do not make up product IDs or names.
-
-Return ONLY valid JSON:
-\`\`\`json
-[
-  {
-    "productId": "actual-product-id-from-kb",
-    "productName": "Actual Product Name from KB", 
-    "reasoning": "This product matches because...",
-    "pros": ["Pro 1", "Pro 2", "Pro 3"],
-    "cons": ["Con 1", "Con 2"]
-  }
-]
-\`\`\``;
-      }
-
-      // Agent searches knowledge base with BDA metadata - NO S3 KEY!
-      // Agent cannot read images, only the structured JSON output from BDA
-      const response = await invokeAgent(searchQuery, sessionId);
-      const resultsData = parseAgentResponse(response.text);
-
-      const mappedResults: SearchResult[] = resultsData.map((result: AgentProductResult) => {
-        const product = products[Math.floor(Math.random() * products.length)];
-        return {
-          product,
-          matchScore: 0.95,
-          reasoning: result.reasoning || 'This product matches your search criteria',
-          pros: result.pros || ['Great quality', 'Stylish design', 'Comfortable fit'],
-          cons: result.cons || ['Limited color options', 'Slightly above budget']
-        };
-      });
-
-      setSearchResults(mappedResults.slice(0, 3));
-      setStage('results');
-
-    } catch (err) {
-      console.error('Search error:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred during search');
-    } finally {
-      setIsLoading(false);
-    }
+  const handleReset = () => {
+    console.log('🔄 handleReset called');
+    setStage('input');
+    setSelectedImage(null);
+    setSelectedFile(null);
+    setImageS3Key(null);
+    setTextPrompt('');
+    setMessages([]);
+    setUserInput('');
+    setError(null);
+    setIsLoading(false); // Make sure loading is cleared
+    const newSessionId = generateSessionId();
+    console.log('🆕 New session ID:', newSessionId);
+    setSessionId(newSessionId); // Generate new session ID
+    window.__bdaMetadata = undefined; // Clear BDA metadata
   };
 
-  // Helper function to parse agent JSON response
-  const parseAgentResponse = (responseText: string): AgentProductResult[] => {
-    try {
-      console.log('Parsing agent response:', responseText);
-
-      // Try to extract JSON array from response - use a more flexible regex
-      const jsonMatch = responseText.match(/\[\s*\{[\s\S]*\}\s*\]/);
-      if (jsonMatch) {
-        try {
-          return JSON.parse(jsonMatch[0]);
-        } catch (parseError) {
-          console.error('JSON parse error:', parseError);
-          console.log('Attempted to parse:', jsonMatch[0]);
-        }
-      }
-
-      // Try to extract JSON object wrapped in results
-      const resultsMatch = responseText.match(/["']?results["']?\s*:\s*(\[[^\]]*\])/);
-      if (resultsMatch) {
-        try {
-          return JSON.parse(resultsMatch[1]);
-        } catch (parseError) {
-          console.error('Results parse error:', parseError);
-        }
-      }
-
-      console.warn('No valid JSON found, using fallback data');
-
-      // If no JSON found, return mock data for top 3
-      return [
-        {
-          productId: '1',
-          productName: 'Product 1',
-          reasoning: 'Matches your style preferences',
-          pros: ['High quality materials', 'Versatile design', 'Comfortable'],
-          cons: ['Limited availability']
-        },
-        {
-          productId: '2',
-          productName: 'Product 2',
-          reasoning: 'Great alternative option',
-          pros: ['Affordable price', 'Popular choice', 'Durable'],
-          cons: ['May run small']
-        },
-        {
-          productId: '3',
-          productName: 'Product 3',
-          reasoning: 'Similar aesthetic',
-          pros: ['Trendy style', 'Multiple colors', 'Free shipping'],
-          cons: ['Slightly over budget']
-        }
-      ];
-    } catch (error) {
-      console.error('Failed to parse response:', error);
-      return [];
-    }
-  };
 
   return (
     <main>
-      {/* Hero Section - New Layout - Only show on input stage */}
+      {/* Hero Section with Beautiful Carousel */}
       {stage === 'input' && (
-      <section style={{
-        padding: '0', 
-        margin: '0',
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#fff'
-      }}>
+      <section style={{ padding: '0', margin: '0' }}>
         <div style={{
-          maxWidth: '1400px',
-          width: '100%',
-          padding: '0 80px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '60px'
+          maxWidth: '100%',
+          margin: '0 auto',
+          padding: '80px 80px 60px 80px',
+          textAlign: 'center'
         }}>
-          
-          {/* Top: Find Your Fit Tagline */}
-          <div style={{ textAlign: 'center' }}>
             <h1 style={{
-              fontSize: '72px',
+            fontSize: '60px',
               fontWeight: '500',
               fontFamily: 'Jost, sans-serif',
               letterSpacing: '0.05px',
-              lineHeight: '80px',
+            lineHeight: '64px',
               color: '#000',
-              margin: '0'
+            marginBottom: '20px'
             }}>
               Find Your <em style={{ fontStyle: 'italic' }}>Fit</em>
             </h1>
+
+          {/* Interactive Search Bar with Carousel */}
+          <div style={{
+            maxWidth: '600px',
+            margin: '0 auto 30px auto',
+            padding: '18px 24px',
+            border: `1px solid ${isFocused ? '#000' : '#ddd'}`,
+            backgroundColor: '#fff',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            transition: 'border-color 0.2s ease'
+          }}>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#999"
+              strokeWidth="2"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+            </svg>
+            <span style={{
+              fontFamily: 'Jost, sans-serif',
+              fontSize: '16px',
+              color: '#999',
+              whiteSpace: 'nowrap'
+            }}>
+              Searching for
+            </span>
+            <div style={{
+              position: 'relative',
+              flex: 1,
+              minWidth: 0,
+              height: '24px',
+              overflow: 'hidden'
+            }}>
+              <div style={{
+                position: 'relative',
+            width: '100%',
+                height: '100%'
+              }}>
+                {placeholders.map((placeholder, idx) => {
+                  let position = idx - placeholderIndex;
+                  if (position < 0) {
+                    position += placeholders.length;
+                  }
+
+                  let opacity = 0;
+                  if (position === 0) opacity = 1;
+                  if (position === placeholders.length - 1) opacity = 0.3;
+
+                  return (
+                    <input
+                      key={idx}
+                      type="text"
+                      value={textPrompt}
+                      onChange={(e) => setTextPrompt(e.target.value)}
+                      onFocus={() => setIsFocused(true)}
+                      onBlur={() => setIsFocused(false)}
+                      placeholder={placeholder}
+                      disabled={idx !== placeholderIndex}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        border: 'none',
+                        outline: 'none',
+                        fontFamily: 'Jost, sans-serif',
+                        fontSize: '16px',
+                        color: '#000',
+                        fontWeight: '500',
+                        backgroundColor: 'transparent',
+                        pointerEvents: idx === placeholderIndex ? 'auto' : 'none',
+                        transform: `translateY(${position * 100}%)`,
+                        transition: 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.5s ease',
+                        opacity: opacity
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
-          {/* Bottom: Image Upload (Left) and Search (Right) */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: '100px',
-            width: '100%',
-            maxWidth: '1400px',
-            justifyContent: 'space-between'
+          <style>{`
+            input::placeholder {
+              color: #000;
+              opacity: 1;
+              transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+          `}</style>
+
+          <p style={{
+            fontSize: '18px',
+            color: '#000',
+            lineHeight: '26px',
+            maxWidth: '700px',
+            margin: '0 auto 30px',
+            fontWeight: '400',
+            fontFamily: 'Jost, sans-serif'
           }}>
-            
-            {/* Left: Image Upload Section - Larger */}
-            <div style={{ flex: '2', maxWidth: '600px' }}>
+            Upload an image and discover products that match your style. Our AI helps you find exactly what you're looking for.
+          </p>
+
+          {/* Search Button for Text-Only Search */}
+          {textPrompt.trim() && !selectedImage && (
+            <div style={{ textAlign: 'center' }}>
+              <button
+                onClick={handleStartSearch}
+                disabled={isLoading}
+                style={{
+                  padding: '16px 60px',
+                  backgroundColor: isLoading ? '#999' : '#000',
+                  color: '#fff',
+                  border: 'none',
+                  cursor: isLoading ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  fontFamily: 'Jost, sans-serif',
+                  letterSpacing: '0.5px',
+                  textTransform: 'uppercase',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isLoading) e.currentTarget.style.backgroundColor = '#333';
+                }}
+                onMouseLeave={(e) => {
+                  if (!isLoading) e.currentTarget.style.backgroundColor = '#000';
+                }}
+              >
+                {isLoading ? 'Searching...' : 'Search'}
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
+      )}
+
+      {/* Main Content */}
+      {stage === 'input' && (
+        <section style={{
+          padding: '0',
+          margin: '0',
+          backgroundColor: '#fff'
+        }}>
             <div style={{
-              border: '2px dashed #000',
-              borderRadius: '16px',
+            width: '100%',
+            padding: '0 80px 80px 80px',
+            margin: '0'
+          }}>
+            <div style={{
+              maxWidth: '800px',
+              margin: '0 auto'
+            }}>
+              {/* Image Upload Section */}
+              <div style={{
+                border: '1px solid #000',
               padding: '80px 60px',
               backgroundColor: '#fff',
               cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              textAlign: 'center',
-              minHeight: '400px',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center'
+                transition: 'background-color 0.2s ease'
             }}
             onDragOver={(e) => {
               e.preventDefault();
-              e.currentTarget.style.backgroundColor = '#f8f9fa';
-              e.currentTarget.style.borderColor = '#333';
+                e.currentTarget.style.backgroundColor = '#fafafa';
             }}
             onDragLeave={(e) => {
               e.preventDefault();
               e.currentTarget.style.backgroundColor = '#fff';
-              e.currentTarget.style.borderColor = '#000';
             }}
             onDrop={(e) => {
               e.preventDefault();
               e.currentTarget.style.backgroundColor = '#fff';
-              e.currentTarget.style.borderColor = '#000';
               const files = Array.from(e.dataTransfer.files);
               const imageFiles = files.filter(file => file.type.startsWith('image/'));
               if (imageFiles.length > 0) {
@@ -599,75 +810,70 @@ Return ONLY valid JSON:
               }
             }}
             onClick={() => document.getElementById('imageUpload')?.click()}
-            onMouseEnter={(e) => {
-              if (!selectedImage) {
-                e.currentTarget.style.backgroundColor = '#f8f9fa';
-                e.currentTarget.style.borderColor = '#333';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!selectedImage) {
-                e.currentTarget.style.backgroundColor = '#fff';
-                e.currentTarget.style.borderColor = '#000';
-              }
-            }}
             >
               {selectedImage ? (
                 <div style={{
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '20px'
+                    gap: '24px'
                 }}>
                   <img
                     src={selectedImage}
                     alt="Uploaded preview"
                     style={{
                       width: '100%',
-                      maxWidth: '350px',
-                      height: 'auto',
-                      borderRadius: '12px',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                        maxWidth: '400px',
+                        height: 'auto'
                     }}
                   />
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedImage(null);
+                        setSelectedFile(null);
                       setError(null);
                     }}
                     style={{
-                      padding: '10px 24px',
+                        padding: '14px 48px',
                       border: '1px solid #000',
-                      backgroundColor: 'transparent',
-                      color: '#000',
+                        backgroundColor: '#000',
+                        color: '#fff',
                       fontFamily: 'Jost, sans-serif',
-                      fontSize: '12px',
+                        fontSize: '14px',
                       fontWeight: '500',
                       cursor: 'pointer',
-                      letterSpacing: '0.5px',
+                        letterSpacing: '1px',
                       textTransform: 'uppercase',
-                      borderRadius: '4px',
                       transition: 'all 0.2s ease'
                     }}
                     onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#fff';
+                        e.currentTarget.style.color = '#000';
+                      }}
+                      onMouseLeave={(e) => {
                       e.currentTarget.style.backgroundColor = '#000';
                       e.currentTarget.style.color = '#fff';
                     }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                      e.currentTarget.style.color = '#000';
-                    }}
                   >
-                    Remove
+                      Remove Image
                   </button>
+                    {isLoading && (
+                      <div style={{
+                        fontFamily: 'Jost, sans-serif',
+                        fontSize: '15px',
+                        color: '#666'
+                      }}>
+                        Processing...
+                      </div>
+                    )}
                 </div>
               ) : (
                 <div style={{
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '20px'
+                    gap: '24px'
                 }}>
                   <svg
                     width="72"
@@ -675,7 +881,7 @@ Return ONLY valid JSON:
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="#000"
-                    strokeWidth="1.5"
+                      strokeWidth="1"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   >
@@ -683,23 +889,23 @@ Return ONLY valid JSON:
                     <polyline points="17 8 12 3 7 8" />
                     <line x1="12" y1="3" x2="12" y2="15" />
                   </svg>
-                  <div>
+                    <div style={{ textAlign: 'center' }}>
                     <p style={{
-                      fontSize: '24px',
+                        fontSize: '20px',
                       fontWeight: '500',
                       color: '#000',
-                      marginBottom: '12px',
-                      fontFamily: 'Jost, sans-serif'
+                        marginBottom: '10px',
+                        fontFamily: 'Jost, sans-serif',
+                        letterSpacing: '0.5px'
                     }}>
-                      Upload Image
+                        Drag and drop your image here
                     </p>
                     <p style={{
-                      fontSize: '16px',
-                      color: '#666',
-                      fontFamily: 'Jost, sans-serif',
-                      margin: '0'
-                    }}>
-                      Drag & drop or click to browse
+                        fontSize: '15px',
+                        color: '#999',
+                        fontFamily: 'Jost, sans-serif'
+                      }}>
+                        or click to browse files
                     </p>
                   </div>
                 </div>
@@ -720,247 +926,199 @@ Return ONLY valid JSON:
             
             {error && (
               <p style={{
-                fontSize: '12px',
+                  fontSize: '13px',
                 color: '#ef4444',
-                marginTop: '12px',
+                  marginTop: '16px',
                 fontFamily: 'Jost, sans-serif',
-                textAlign: 'center'
+                  textAlign: 'left'
               }}>
                 {error}
               </p>
             )}
+
+              <p style={{
+                fontSize: '13px',
+                color: '#999',
+                marginTop: '16px',
+                fontFamily: 'Jost, sans-serif',
+                textAlign: 'left',
+                letterSpacing: '0.3px'
+              }}>
+                Supported formats: JPG, PNG, GIF (max 5MB)
+              </p>
           </div>
 
-            {/* Right: Search Bar and Button */}
+            {/* OR Divider */}
             <div style={{ 
-              flex: '1', 
               display: 'flex', 
-              flexDirection: 'column',
-              alignItems: 'stretch', 
-              gap: '24px',
-              maxWidth: '450px',
-              marginTop: '40px'
+              alignItems: 'center',
+              gap: '20px',
+              maxWidth: '800px',
+              margin: '40px auto'
             }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '16px'
+              <div style={{ flex: 1, height: '1px', backgroundColor: '#000' }} />
+              <span style={{
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#000',
+                fontFamily: 'Jost, sans-serif',
+                letterSpacing: '0.5px'
               }}>
-                <input
-                  type="text"
+                OR
+              </span>
+              <div style={{ flex: 1, height: '1px', backgroundColor: '#000' }} />
+            </div>
+
+            {/* Text Prompt Area */}
+              <div style={{
+              maxWidth: '800px',
+              margin: '0 auto'
+            }}>
+              <h3 style={{
+                fontSize: '18px',
+                marginBottom: '15px',
+                color: '#000',
+                fontFamily: 'Jost, sans-serif',
+                fontWeight: '500'
+              }}>
+                Describe What You're Looking For
+              </h3>
+              <textarea
                   value={textPrompt}
                   onChange={(e) => setTextPrompt(e.target.value)}
-                  placeholder="What are you looking for?"
+                placeholder="E.g., 'Black leather ankle boots with a block heel, suitable for office wear, under $150'"
                   style={{
-                    flex: '1',
-                    padding: '20px 24px',
+                  width: '100%',
+                  minHeight: '120px',
+                  padding: '15px',
                     fontSize: '16px',
-                    border: '2px solid #000',
-                    borderRadius: '8px',
-                    outline: 'none',
+                  border: '1px solid #000',
+                  resize: 'vertical',
                     fontFamily: 'Jost, sans-serif',
-                    backgroundColor: '#fff',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.borderColor = '#333';
-                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(0,0,0,0.1)';
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.borderColor = '#000';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleStartSearch();
-                    }
-                  }}
-                />
-                
-                {/* Fancy Search Button */}
+                  outline: 'none',
+                  transition: 'border-color 0.3s'
+                }}
+                onFocus={(e) => e.currentTarget.style.borderColor = '#000'}
+                onBlur={(e) => e.currentTarget.style.borderColor = '#000'}
+              />
+            </div>
+
+            {/* Start Search Button */}
+            <div style={{
+              maxWidth: '800px',
+              margin: '30px auto 0'
+            }}>
                 <button
                   onClick={handleStartSearch}
                   disabled={isLoading || (!selectedImage && !textPrompt.trim())}
                   style={{
-                    padding: '20px 32px',
-                    backgroundColor: (isLoading || (!selectedImage && !textPrompt.trim())) ? '#ccc' : '#000',
+                  width: '100%',
+                  padding: '18px',
+                  fontSize: '14px',
+                  fontWeight: '500',
                     color: '#fff',
+                  backgroundColor: (isLoading || (!selectedImage && !textPrompt.trim())) ? '#999' : '#000',
                     border: 'none',
-                    borderRadius: '8px',
                     cursor: (isLoading || (!selectedImage && !textPrompt.trim())) ? 'not-allowed' : 'pointer',
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    fontFamily: 'Jost, sans-serif',
                     letterSpacing: '0.5px',
                     textTransform: 'uppercase',
-                    transition: 'all 0.3s ease',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    minWidth: '120px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px'
+                  fontFamily: 'Jost, sans-serif',
+                  transition: 'all 0.2s ease'
                   }}
                   onMouseEnter={(e) => {
                     if (!isLoading && (selectedImage || textPrompt.trim())) {
                       e.currentTarget.style.backgroundColor = '#333';
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.3)';
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!isLoading && (selectedImage || textPrompt.trim())) {
                       e.currentTarget.style.backgroundColor = '#000';
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = 'none';
-                    }
-                  }}
-                >
-                  {isLoading ? (
-                    <>
-                      <div style={{
-                        width: '16px',
-                        height: '16px',
-                        border: '2px solid #fff',
-                        borderTop: '2px solid transparent',
-                        borderRadius: '50%',
-                        animation: 'spin 1s linear infinite'
-                      }} />
-                      Searching
-                    </>
-                  ) : (
-                    <>
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <circle cx="11" cy="11" r="8" />
-                        <path d="m21 21-4.35-4.35" />
-                      </svg>
-                      Search
-                    </>
-                  )}
+                  }
+                }}
+              >
+                {isLoading ? 'Starting AI Search...' : 'Start AI Search'}
                 </button>
-              </div>
-            </div>
           </div>
         </div>
       </section>
       )}
 
-      {/* Conversation Stage - Chatbox with Image */}
+      {/* Conversation Stage */}
       {stage === 'conversation' && (
         <section style={{
-          padding: '0',
-          backgroundColor: '#fff',
-          minHeight: '100vh'
+          padding: '40px 20px',
+          backgroundColor: '#f8fafc',
+          minHeight: '70vh'
         }}>
+          <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+            {/* Header with Reset Button */}
           <div style={{
-            maxWidth: '1200px',
-            margin: '0 auto',
-            padding: '60px 40px',
             display: 'flex',
-            gap: '40px',
-            alignItems: 'flex-start'
-          }}>
-            {/* Left: Image Preview */}
-            <div style={{ flex: '0 0 400px' }}>
-              <div style={{
-                position: 'sticky',
-                top: '80px'
-              }}>
-                <h3 style={{
-                  fontSize: '18px',
-                  fontWeight: '500',
-                  fontFamily: 'Jost, sans-serif',
-                  margin: '0 0 16px 0',
-                  color: '#000'
-                }}>
-                  Your Image
-                </h3>
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '30px'
+            }}>
+              <h2 style={{ fontSize: '28px', margin: 0 }}>AI Conversation</h2>
+              <button
+                onClick={handleReset}
+                style={{
+                  padding: '10px 20px',
+                  fontSize: '14px',
+                  color: '#6366F1',
+                  background: '#fff',
+                  border: '2px solid #6366F1',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: '500'
+                }}
+              >
+                New Search
+              </button>
+            </div>
+
+            {/* Image Preview (if uploaded) */}
                 {selectedImage && (
                   <div style={{
-                    border: '2px solid #e5e7eb',
-                    borderRadius: '8px',
-                    overflow: 'hidden',
-                    backgroundColor: '#f9fafb'
+                marginBottom: '20px',
+                padding: '15px',
+                backgroundColor: '#fff',
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '15px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
                   }}>
                     <img
                       src={selectedImage}
-                      alt="Uploaded"
+                  alt="Your upload"
                       style={{
-                        width: '100%',
-                        height: 'auto',
-                        display: 'block'
-                      }}
-                    />
-                  </div>
-                )}
-                <p style={{
-                  fontSize: '13px',
-                  color: '#666',
-                  fontFamily: 'Jost, sans-serif',
-                  margin: '12px 0 0 0',
-                  lineHeight: '1.5'
-                }}>
-                  ✓ Image uploaded successfully. The AI can see your image and will help you find similar products.
+                    width: '80px',
+                    height: '80px',
+                    objectFit: 'cover',
+                    borderRadius: '8px'
+                  }}
+                />
+                <div>
+                  <p style={{ fontSize: '14px', color: '#6B7280', margin: 0 }}>Your Image</p>
+                  <p style={{ fontSize: '12px', color: '#9CA3AF', margin: '4px 0 0 0' }}>
+                    AI is analyzing this image
                 </p>
               </div>
             </div>
-
-            {/* Right: Chat Interface */}
-            <div style={{ flex: 1 }}>
-              <div style={{
-                backgroundColor: '#fff',
-                border: '2px solid #000',
-                borderRadius: '8px',
-                overflow: 'hidden',
-                display: 'flex',
-                flexDirection: 'column',
-                height: 'calc(100vh - 160px)',
-                maxHeight: '700px'
-              }}>
-                {/* Chat Header */}
-                <div style={{
-                  padding: '20px 24px',
-                  borderBottom: '2px solid #000',
-                  backgroundColor: '#fff'
-                }}>
-                  <h2 style={{
-                    fontSize: '24px',
-                    fontWeight: '500',
-                    fontFamily: 'Jost, sans-serif',
-                    margin: '0 0 8px 0',
-                    color: '#000'
-                  }}>
-                    Tell Me More
-                  </h2>
-                  <p style={{
-                    fontSize: '14px',
-                    color: '#666',
-                    fontFamily: 'Jost, sans-serif',
-                    margin: 0,
-                    lineHeight: '1.5'
-                  }}>
-                    Share details about what you're looking for to help me find the perfect match
-                  </p>
-                </div>
+            )}
 
                 {/* Chat Messages */}
                 <div style={{
-                  flex: 1,
-                  padding: '24px',
+              backgroundColor: '#fff',
+              borderRadius: '12px',
+              padding: '20px',
+              marginBottom: '20px',
+              minHeight: '400px',
+              maxHeight: '500px',
                   overflowY: 'auto',
-                  backgroundColor: '#fafafa'
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
                 }}>
-                  {chatMessages.map((msg, idx) => (
+              {messages.map((msg, idx) => (
                     <div
                       key={idx}
                       style={{
@@ -971,28 +1129,20 @@ Return ONLY valid JSON:
                     >
                       <div
                         style={{
-                          maxWidth: '75%',
-                          padding: '14px 18px',
+                      maxWidth: '70%',
+                      padding: '12px 16px',
                           borderRadius: '12px',
-                          backgroundColor: msg.role === 'user' ? '#000' : '#fff',
-                          color: msg.role === 'user' ? '#fff' : '#000',
-                          border: msg.role === 'assistant' ? '1px solid #e5e7eb' : 'none',
-                          boxShadow: msg.role === 'assistant' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
-                        }}
-                      >
-                        <p style={{
-                          margin: 0,
-                          fontSize: '15px',
-                          lineHeight: '1.6',
-                          fontFamily: 'Jost, sans-serif'
-                        }}>
+                      backgroundColor: msg.role === 'user' ? '#6366F1' : '#F3F4F6',
+                      color: msg.role === 'user' ? '#fff' : '#1F2937'
+                    }}
+                  >
+                    <p style={{ margin: 0, fontSize: '15px', lineHeight: '1.5' }}>
                           {msg.content}
                         </p>
                         <p style={{
                           margin: '8px 0 0 0',
                           fontSize: '11px',
-                          opacity: 0.6,
-                          fontFamily: 'Jost, sans-serif'
+                      opacity: 0.7
                         }}>
                           {new Date(msg.timestamp).toLocaleTimeString()}
                         </p>
@@ -1006,651 +1156,64 @@ Return ONLY valid JSON:
                       marginBottom: '20px'
                     }}>
                       <div style={{
-                        padding: '14px 18px',
+                    padding: '12px 16px',
                         borderRadius: '12px',
-                        backgroundColor: '#fff',
-                        border: '1px solid #e5e7eb',
-                        color: '#666',
-                        fontFamily: 'Jost, sans-serif',
-                        fontSize: '15px'
-                      }}>
-                        AI is thinking...
+                    backgroundColor: '#F3F4F6',
+                    color: '#6B7280'
+                  }}>
+                    <span>AI is thinking</span>
+                    <span className="typing-dots">...</span>
                       </div>
                     </div>
                   )}
+              <div ref={messagesEndRef} />
                 </div>
 
-                {/* Chat Input */}
-                <div style={{
-                  padding: '20px 24px',
-                  borderTop: '2px solid #000',
-                  backgroundColor: '#fff'
-                }}>
+            {/* Input Box */}
                   <div style={{
                     display: 'flex',
-                    gap: '12px',
-                    alignItems: 'flex-end'
-                  }}>
-                    <textarea
-                      value={userMessage}
-                      onChange={(e) => setUserMessage(e.target.value)}
+              gap: '10px'
+            }}>
+              <input
+                type="text"
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                           e.preventDefault();
                           handleSendMessage();
                         }
                       }}
-                      placeholder="E.g., 'I'm looking for casual shoes under $100' or 'Show me formal options'"
+                placeholder="Type your message..."
                       disabled={isLoading}
                       style={{
                         flex: 1,
-                        minHeight: '60px',
-                        maxHeight: '120px',
-                        padding: '12px 16px',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '6px',
-                        fontSize: '15px',
-                        fontFamily: 'Jost, sans-serif',
+                  padding: '14px 16px',
+                  fontSize: '16px',
+                  borderRadius: '12px',
+                  border: '2px solid #D1D5DB',
                         outline: 'none',
-                        resize: 'vertical',
-                        backgroundColor: isLoading ? '#f9fafb' : '#fff'
-                      }}
-                      onFocus={(e) => {
-                        e.currentTarget.style.borderColor = '#000';
-                      }}
-                      onBlur={(e) => {
-                        e.currentTarget.style.borderColor = '#d1d5db';
+                  fontFamily: 'inherit'
                       }}
                     />
                     <button
                       onClick={handleSendMessage}
-                      disabled={isLoading || !userMessage.trim()}
+                disabled={isLoading || !userInput.trim()}
                       style={{
-                        padding: '14px 28px',
-                        backgroundColor: (isLoading || !userMessage.trim()) ? '#ccc' : '#000',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: '6px',
-                        fontSize: '15px',
-                        fontWeight: '600',
-                        fontFamily: 'Jost, sans-serif',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
-                        cursor: (isLoading || !userMessage.trim()) ? 'not-allowed' : 'pointer',
-                        transition: 'all 0.2s ease',
-                        whiteSpace: 'nowrap'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!isLoading && userMessage.trim()) {
-                          e.currentTarget.style.backgroundColor = '#333';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isLoading && userMessage.trim()) {
-                          e.currentTarget.style.backgroundColor = '#000';
-                        }
-                      }}
-                    >
-                      {isLoading ? 'Sending...' : 'Send'}
-                    </button>
-                  </div>
-                  <p style={{
-                    fontSize: '12px',
-                    color: '#999',
-                    fontFamily: 'Jost, sans-serif',
-                    margin: '12px 0 0 0'
-                  }}>
-                    Press Enter to send, Shift+Enter for new line
-                  </p>
-                </div>
-              </div>
-
-              {/* Skip to Results Button */}
-              <div style={{
-                marginTop: '20px',
-                textAlign: 'center'
-              }}>
-                <button
-                  onClick={handleSearchFromConversation}
-                  disabled={isLoading || chatMessages.filter(m => m.role === 'user').length === 0}
-                  style={{
-                    padding: '12px 32px',
-                    backgroundColor: '#fff',
-                    color: '#000',
-                    border: '2px solid #000',
-                    borderRadius: '4px',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    fontFamily: 'Jost, sans-serif',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    cursor: (isLoading || chatMessages.filter(m => m.role === 'user').length === 0) ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.2s ease',
-                    opacity: (isLoading || chatMessages.filter(m => m.role === 'user').length === 0) ? 0.5 : 1
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isLoading && chatMessages.filter(m => m.role === 'user').length > 0) {
-                      e.currentTarget.style.backgroundColor = '#000';
-                      e.currentTarget.style.color = '#fff';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isLoading && chatMessages.filter(m => m.role === 'user').length > 0) {
-                      e.currentTarget.style.backgroundColor = '#fff';
-                      e.currentTarget.style.color = '#000';
-                    }
-                  }}
-                >
-                  Show Me Results →
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Add CSS for spinner animation */}
-      <style>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
-
-      {/* Results Stage - Full Page */}
-      {stage === 'results' && (
-        <section style={{
-          padding: '0',
-          backgroundColor: '#fff',
-          minHeight: '100vh'
-        }}>
-          {/* Search Bar at Top - ALDO Style */}
-          <div style={{
-            backgroundColor: '#fff',
-            borderBottom: '1px solid #e5e7eb',
-            padding: '20px 60px',
-            position: 'sticky',
-            top: 0,
-            zIndex: 100
-          }}>
-            <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '16px',
-                marginBottom: '12px'
-              }}>
-                <button
-                  onClick={() => setStage('input')}
-                  style={{
-                    padding: '12px 20px',
-                    backgroundColor: '#fff',
-                    color: '#000',
-                    border: '1px solid #000',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    fontFamily: 'Jost, sans-serif',
-                    letterSpacing: '0.5px',
-                    transition: 'all 0.2s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#000';
-                    e.currentTarget.style.color = '#fff';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = '#fff';
-                    e.currentTarget.style.color = '#000';
-                  }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="15 18 9 12 15 6" />
-                  </svg>
-                  New Search
-                </button>
-                <div style={{
-                  flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '12px 20px',
-                  border: '1px solid #000',
-                  backgroundColor: '#fff'
-                }}>
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#000"
-                    strokeWidth="2"
-                  >
-                    <circle cx="11" cy="11" r="8" />
-                    <path d="m21 21-4.35-4.35" />
-                  </svg>
-                  <input
-                    type="text"
-                    value={textPrompt}
-                    onChange={(e) => setTextPrompt(e.target.value)}
-                    placeholder="Search by keyword, style, etc."
-                    style={{
-                      flex: 1,
-                      border: 'none',
-                      outline: 'none',
-                      fontSize: '14px',
-                      fontFamily: 'Jost, sans-serif',
-                      backgroundColor: 'transparent'
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        handleStartSearch();
-                      }
-                    }}
-                  />
-                </div>
-                <button
-                  onClick={handleStartSearch}
-                  disabled={isLoading}
-                  style={{
-                    padding: '12px 24px',
-                    backgroundColor: isLoading ? '#ccc' : '#000',
-                    color: '#fff',
-                    border: 'none',
-                    cursor: isLoading ? 'not-allowed' : 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    fontFamily: 'Jost, sans-serif',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isLoading) e.currentTarget.style.backgroundColor = '#333';
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isLoading) e.currentTarget.style.backgroundColor = '#000';
-                  }}
-                >
-                  {isLoading ? 'Searching...' : 'Search'}
-                </button>
-              </div>
-              <p style={{
-                fontSize: '14px',
-                color: '#666',
-                margin: '12px 0 0 0',
-                fontFamily: 'Jost, sans-serif'
-              }}>
-                {searchResults.length} Results {textPrompt && `for "${textPrompt}"`}
-              </p>
-            </div>
-          </div>
-
-          {/* Main Content Area */}
-          <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '40px 60px' }}>
-            {/* Filters and Sort Bar - ALDO Style */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '30px',
-              paddingBottom: '20px',
-              borderBottom: '1px solid #e5e7eb'
-            }}>
-              <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                <button
-                  style={{
-                    padding: '8px 16px',
-                    border: '1px solid #000',
-                    backgroundColor: '#fff',
-                    color: '#000',
-                    fontSize: '14px',
-                    fontFamily: 'Jost, sans-serif',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="4" y1="6" x2="20" y2="6" />
-                    <line x1="4" y1="12" x2="20" y2="12" />
-                    <line x1="4" y1="18" x2="20" y2="18" />
-                  </svg>
-                  Filters
-                </button>
-                <span style={{
-                  fontSize: '14px',
-                  color: '#666',
-                  fontFamily: 'Jost, sans-serif'
-                }}>
-                  {searchResults.length} Results
-                </span>
-              </div>
-
-              <button
-                style={{
-                  padding: '8px 16px',
-                  border: '1px solid #000',
-                  backgroundColor: '#fff',
-                  color: '#000',
-                  fontSize: '14px',
-                  fontFamily: 'Jost, sans-serif',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
+                  padding: '14px 30px',
+                        fontSize: '16px',
+                          fontWeight: '600',
+                          color: '#fff',
+                  background: (isLoading || !userInput.trim())
+                    ? '#9CA3AF'
+                    : 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)',
+                          border: 'none',
+                  borderRadius: '12px',
+                  cursor: (isLoading || !userInput.trim()) ? 'not-allowed' : 'pointer'
                 }}
               >
-                Sort by
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </button>
-            </div>
-
-            {/* 3-Column Grid of Products - ALDO Style */}
-            {searchResults.length > 0 ? (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: '20px',
-                marginBottom: '40px'
-              }}>
-                {searchResults.map((result, index) => (
-                  <div
-                    key={result.product.id}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      backgroundColor: '#fff',
-                      cursor: 'pointer',
-                      transition: 'transform 0.2s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-4px)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)';
-                    }}
-                  >
-                    {/* Product Image */}
-                    <div style={{
-                      position: 'relative',
-                      backgroundColor: '#f3f4f6',
-                      overflow: 'hidden',
-                      marginBottom: '16px'
-                    }}>
-                      {/* Rank Badge */}
-                      <div style={{
-                        position: 'absolute',
-                        top: '12px',
-                        left: '12px',
-                        backgroundColor: '#000',
-                        color: '#fff',
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '16px',
-                        fontWeight: '700',
-                        fontFamily: 'Jost, sans-serif',
-                        zIndex: 10
-                      }}>
-                        {index + 1}
-                      </div>
-                      <img
-                        src={result.product.image}
-                        alt={result.product.name}
-                        style={{
-                          width: '100%',
-                          height: 'auto',
-                          display: 'block'
-                        }}
-                      />
-                    </div>
-
-                    {/* Product Info */}
-                    <div style={{ padding: '0 8px' }}>
-                      <h3 style={{
-                        fontSize: '16px',
-                        fontWeight: '400',
-                        fontFamily: 'Jost, sans-serif',
-                        margin: '0 0 8px 0',
-                        color: '#000',
-                        lineHeight: '1.4'
-                      }}>
-                        {result.product.name}
-                      </h3>
-                      <p style={{
-                        fontSize: '16px',
-                        fontWeight: '500',
-                        fontFamily: 'Jost, sans-serif',
-                        margin: '0 0 16px 0',
-                        color: '#000'
-                      }}>
-                        ${result.product.price}
-                      </p>
-
-                      {/* Reasoning */}
-                      <p style={{
-                        fontSize: '13px',
-                        color: '#666',
-                        fontFamily: 'Jost, sans-serif',
-                        lineHeight: '1.5',
-                        margin: '0 0 16px 0',
-                        fontStyle: 'italic'
-                      }}>
-                        {result.reasoning}
-                      </p>
-
-                      {/* Pros Section */}
-                      <div style={{
-                        padding: '12px',
-                        backgroundColor: '#f0fdf4',
-                        border: '1px solid #86efac',
-                        borderRadius: '4px',
-                        marginBottom: '12px'
-                      }}>
-                        <h4 style={{
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          fontFamily: 'Jost, sans-serif',
-                          margin: '0 0 8px 0',
-                          color: '#166534',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.5px'
-                        }}>
-                          ✓ Pros
-                        </h4>
-                        <ul style={{
-                          margin: 0,
-                          paddingLeft: '16px',
-                          listStyleType: 'disc'
-                        }}>
-                          {result.pros.map((pro, i) => (
-                            <li
-                              key={i}
-                              style={{
-                                fontSize: '12px',
-                                color: '#15803d',
-                                fontFamily: 'Jost, sans-serif',
-                                lineHeight: '1.5',
-                                marginBottom: '4px'
-                              }}
-                            >
-                              {pro}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-
-                      {/* Cons Section */}
-                      <div style={{
-                        padding: '12px',
-                        backgroundColor: '#fef2f2',
-                        border: '1px solid #fca5a5',
-                        borderRadius: '4px',
-                        marginBottom: '16px'
-                      }}>
-                        <h4 style={{
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          fontFamily: 'Jost, sans-serif',
-                          margin: '0 0 8px 0',
-                          color: '#991b1b',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.5px'
-                        }}>
-                          ⚠ Cons
-                        </h4>
-                        <ul style={{
-                          margin: 0,
-                          paddingLeft: '16px',
-                          listStyleType: 'disc'
-                        }}>
-                          {result.cons.map((con, i) => (
-                            <li
-                              key={i}
-                              style={{
-                                fontSize: '12px',
-                                color: '#dc2626',
-                                fontFamily: 'Jost, sans-serif',
-                                lineHeight: '1.5',
-                                marginBottom: '4px'
-                              }}
-                            >
-                              {con}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-
-                      {/* View Button */}
-                      <button
-                        onClick={() => {
-                          window.open(`https://www.aldoshoes.com/us/en_US/search?q=${encodeURIComponent(result.product.name)}`, '_blank');
-                        }}
-                        style={{
-                          width: '100%',
-                          padding: '12px',
-                          backgroundColor: '#000',
-                          color: '#fff',
-                          border: 'none',
-                          fontSize: '13px',
-                          fontWeight: '500',
-                          fontFamily: 'Jost, sans-serif',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.5px',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = '#333';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = '#000';
-                        }}
-                      >
-                        View Product
+                Send
                       </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div style={{
-                textAlign: 'center',
-                padding: '60px 20px',
-                color: '#666',
-                fontFamily: 'Jost, sans-serif'
-              }}>
-                <p style={{ fontSize: '18px' }}>No results found. Please try a different search.</p>
-              </div>
-            )}
-
-            {/* Refine Search Section with Chatbox */}
-            <div style={{
-              marginTop: '40px',
-              padding: '30px',
-              backgroundColor: '#f9fafb',
-              border: '1px solid #e5e7eb',
-              borderRadius: '8px'
-            }}>
-              <h3 style={{
-                fontSize: '20px',
-                fontWeight: '500',
-                fontFamily: 'Jost, sans-serif',
-                margin: '0 0 16px 0',
-                color: '#000'
-              }}>
-                Refine Your Search
-              </h3>
-              <p style={{
-                fontSize: '14px',
-                color: '#666',
-                fontFamily: 'Jost, sans-serif',
-                margin: '0 0 20px 0',
-                lineHeight: '1.6'
-              }}>
-                Not quite what you're looking for? Tell our AI assistant more about what you want, and we'll find better matches.
-              </p>
-
-              <div style={{
-                display: 'flex',
-                gap: '12px',
-                alignItems: 'flex-start'
-              }}>
-                <textarea
-                  placeholder="E.g., 'I need something more formal' or 'Show me options under $50'"
-                  style={{
-                    flex: 1,
-                    minHeight: '80px',
-                    padding: '12px 16px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '4px',
-                    fontSize: '14px',
-                    fontFamily: 'Jost, sans-serif',
-                    outline: 'none',
-                    resize: 'vertical'
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.borderColor = '#000';
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.borderColor = '#d1d5db';
-                  }}
-                />
-                <button
-                  style={{
-                    padding: '12px 24px',
-                    backgroundColor: '#000',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '4px',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    fontFamily: 'Jost, sans-serif',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    whiteSpace: 'nowrap'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#333';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = '#000';
-                  }}
-                >
-                  Refine →
-                </button>
-              </div>
             </div>
           </div>
         </section>
@@ -1658,4 +1221,3 @@ Return ONLY valid JSON:
     </main>
   );
 }
-
