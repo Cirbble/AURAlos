@@ -12,7 +12,13 @@ interface AgentProductResult {
   cons: string[];
 }
 
-type Stage = 'input' | 'results';
+type Stage = 'input' | 'conversation' | 'results';
+
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: number;
+}
 
 interface SearchResult {
   product: Product;
@@ -27,11 +33,14 @@ export default function AICollection() {
   const [stage, setStage] = useState<Stage>('input');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imageS3Key, setImageS3Key] = useState<string | null>(null);
   const [textPrompt, setTextPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sessionId] = useState(() => generateSessionId());
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [userMessage, setUserMessage] = useState('');
 
   const handleImageUpload = async (files: File[]) => {
     setError(null);
@@ -49,6 +58,62 @@ export default function AICollection() {
     // Create preview
     const preview = await fileToBase64(file);
     setSelectedImage(preview);
+
+    // Move to conversation stage immediately
+    setStage('conversation');
+
+    // Show initial loading message
+    const loadingMessage: ChatMessage = {
+      role: 'assistant',
+      content: '✓ Image uploaded! Let me take a look at what you\'ve shared...',
+      timestamp: Date.now()
+    };
+    setChatMessages([loadingMessage]);
+
+    // Upload to S3 and get AI description
+    setIsLoading(true);
+    try {
+      // Upload to S3 first
+      const uploadResult = await uploadImageToS3(file);
+      if (uploadResult.success) {
+        setImageS3Key(uploadResult.s3Key);
+
+        // Ask the Bedrock agent to describe the image
+        const descriptionPrompt = `A user just uploaded an image to s3://${import.meta.env.VITE_S3_BUCKET}/${uploadResult.s3Key}. 
+        
+Please analyze this image and provide a brief, friendly description of what you see. Focus on:
+- What type of product/accessory it is
+- Key visual features (color, style, design elements)
+- The general category (shoes, bag, jewelry, etc.)
+
+Keep it conversational and under 2-3 sentences. Then ask what they're looking for.
+
+Example format: "I can see you've uploaded [description of item]. [Notable feature]. Tell me more about what you're looking for! What style, price range, or specific features are you interested in?"`;
+
+        const response = await invokeAgent(descriptionPrompt, sessionId, uploadResult.s3Key);
+
+        // Replace loading message with AI description
+        const descriptionMessage: ChatMessage = {
+          role: 'assistant',
+          content: response.text,
+          timestamp: Date.now()
+        };
+        setChatMessages([descriptionMessage]);
+      } else {
+        throw new Error('Failed to upload image');
+      }
+    } catch (err) {
+      console.error('Error getting image description:', err);
+      // Fallback to generic message
+      const fallbackMessage: ChatMessage = {
+        role: 'assistant',
+        content: `✓ I can see you've uploaded an image${file.name ? ` (${file.name})` : ''}. Tell me more about what you're looking for! What style, price range, or specific features are you interested in?`,
+        timestamp: Date.now()
+      };
+      setChatMessages([fallbackMessage]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleStartSearch = async () => {
@@ -61,14 +126,15 @@ export default function AICollection() {
     setError(null);
 
     try {
-      // Upload image to S3 if present
-      let s3Key: string | undefined;
-      if (selectedFile) {
+      // Upload image to S3 if present and not already uploaded
+      let s3Key: string | undefined = imageS3Key || undefined;
+      if (selectedFile && !imageS3Key) {
         const uploadResult = await uploadImageToS3(selectedFile);
         if (!uploadResult.success) {
           throw new Error(uploadResult.error || 'Failed to upload image');
         }
         s3Key = uploadResult.s3Key;
+        setImageS3Key(s3Key);
       }
 
       // Create search query asking for top 3 results with pros/cons in JSON format
@@ -108,6 +174,139 @@ Important: Return ONLY the JSON array, no other text.`;
       });
 
       setSearchResults(mappedResults.slice(0, 3)); // Ensure only top 3
+      setStage('results');
+
+    } catch (err) {
+      console.error('Search error:', err);
+      setError(err instanceof Error ? err.message : 'An error occurred during search');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!userMessage.trim() || isLoading) return;
+
+    // Add user message to chat
+    const newUserMessage: ChatMessage = {
+      role: 'user',
+      content: userMessage,
+      timestamp: Date.now()
+    };
+    setChatMessages(prev => [...prev, newUserMessage]);
+    setUserMessage('');
+    setIsLoading(true);
+
+    try {
+      // Upload image to S3 if not already uploaded (for agent to reference)
+      if (selectedFile && !imageS3Key) {
+        try {
+          const uploadResult = await uploadImageToS3(selectedFile);
+          if (uploadResult.success) {
+            setImageS3Key(uploadResult.s3Key);
+          }
+        } catch (uploadErr) {
+          console.warn('S3 upload failed, continuing without S3 storage:', uploadErr);
+        }
+      }
+
+      // Build conversation history for context
+      const conversationHistory = chatMessages
+        .map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
+        .filter(msg => msg); // Remove empty messages
+
+      // Build message for agent
+      const fullMessage = `
+${selectedImage ? 'User uploaded an image of a fashion product/accessory.' : ''}
+Previous conversation:
+${conversationHistory.join('\n')}
+
+User's new message: ${userMessage}
+
+Please respond naturally and ask clarifying questions to help narrow down the perfect product. When you have enough information, say "I have enough information to show you the perfect matches!" and I'll show the results.`;
+
+      // Use Bedrock agent
+      const response = await invokeAgent(fullMessage, sessionId, imageS3Key || undefined);
+
+      // Add AI response to chat
+      const aiMessage: ChatMessage = {
+        role: 'assistant',
+        content: response.text,
+        timestamp: Date.now()
+      };
+      setChatMessages(prev => [...prev, aiMessage]);
+
+      // Check if AI is ready to show results
+      if (response.text.toLowerCase().includes('perfect matches') ||
+          response.text.toLowerCase().includes('show you') ||
+          response.text.toLowerCase().includes('ready to search')) {
+        // Trigger search with accumulated context
+        setTimeout(() => {
+          handleSearchFromConversation();
+        }, 1000);
+      }
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send message');
+      // Re-add the message input if there was an error
+      setUserMessage(newUserMessage.content);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSearchFromConversation = async () => {
+    setIsLoading(true);
+
+    try {
+      // Upload image to S3 if not already uploaded
+      let s3KeyToUse = imageS3Key;
+      if (selectedFile && !imageS3Key) {
+        try {
+          const uploadResult = await uploadImageToS3(selectedFile);
+          if (uploadResult.success) {
+            s3KeyToUse = uploadResult.s3Key;
+            setImageS3Key(uploadResult.s3Key);
+          }
+        } catch (uploadErr) {
+          console.warn('S3 upload failed, continuing without image context:', uploadErr);
+        }
+      }
+
+      // Build search query from entire conversation
+      const conversationSummary = chatMessages
+        .filter(msg => msg.role === 'user')
+        .map(msg => msg.content)
+        .join(' ');
+
+      const searchQuery = `Based on the uploaded image and user's requirements: "${conversationSummary}". 
+      
+Find the top 3 products that match. Return ONLY a JSON array:
+[
+  {
+    "productId": "product-id",
+    "productName": "Product Name",
+    "reasoning": "Why this product matches the search",
+    "pros": ["Pro 1", "Pro 2", "Pro 3"],
+    "cons": ["Con 1", "Con 2"]
+  }
+]`;
+
+      const response = await invokeAgent(searchQuery, sessionId, s3KeyToUse || undefined);
+      const resultsData = parseAgentResponse(response.text);
+
+      const mappedResults: SearchResult[] = resultsData.map((result: AgentProductResult) => {
+        const product = products[Math.floor(Math.random() * products.length)];
+        return {
+          product,
+          matchScore: 0.95,
+          reasoning: result.reasoning || 'This product matches your search criteria',
+          pros: result.pros || ['Great quality', 'Stylish design', 'Comfortable fit'],
+          cons: result.cons || ['Limited color options', 'Slightly above budget']
+        };
+      });
+
+      setSearchResults(mappedResults.slice(0, 3));
       setStage('results');
 
     } catch (err) {
@@ -497,6 +696,300 @@ Important: Return ONLY the JSON array, no other text.`;
           </div>
         </div>
       </section>
+      )}
+
+      {/* Conversation Stage - Chatbox with Image */}
+      {stage === 'conversation' && (
+        <section style={{
+          padding: '0',
+          backgroundColor: '#fff',
+          minHeight: '100vh'
+        }}>
+          <div style={{
+            maxWidth: '1200px',
+            margin: '0 auto',
+            padding: '60px 40px',
+            display: 'flex',
+            gap: '40px',
+            alignItems: 'flex-start'
+          }}>
+            {/* Left: Image Preview */}
+            <div style={{ flex: '0 0 400px' }}>
+              <div style={{
+                position: 'sticky',
+                top: '80px'
+              }}>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '500',
+                  fontFamily: 'Jost, sans-serif',
+                  margin: '0 0 16px 0',
+                  color: '#000'
+                }}>
+                  Your Image
+                </h3>
+                {selectedImage && (
+                  <div style={{
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '8px',
+                    overflow: 'hidden',
+                    backgroundColor: '#f9fafb'
+                  }}>
+                    <img
+                      src={selectedImage}
+                      alt="Uploaded"
+                      style={{
+                        width: '100%',
+                        height: 'auto',
+                        display: 'block'
+                      }}
+                    />
+                  </div>
+                )}
+                <p style={{
+                  fontSize: '13px',
+                  color: '#666',
+                  fontFamily: 'Jost, sans-serif',
+                  margin: '12px 0 0 0',
+                  lineHeight: '1.5'
+                }}>
+                  ✓ Image uploaded successfully. The AI can see your image and will help you find similar products.
+                </p>
+              </div>
+            </div>
+
+            {/* Right: Chat Interface */}
+            <div style={{ flex: 1 }}>
+              <div style={{
+                backgroundColor: '#fff',
+                border: '2px solid #000',
+                borderRadius: '8px',
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                height: 'calc(100vh - 160px)',
+                maxHeight: '700px'
+              }}>
+                {/* Chat Header */}
+                <div style={{
+                  padding: '20px 24px',
+                  borderBottom: '2px solid #000',
+                  backgroundColor: '#fff'
+                }}>
+                  <h2 style={{
+                    fontSize: '24px',
+                    fontWeight: '500',
+                    fontFamily: 'Jost, sans-serif',
+                    margin: '0 0 8px 0',
+                    color: '#000'
+                  }}>
+                    Tell Me More
+                  </h2>
+                  <p style={{
+                    fontSize: '14px',
+                    color: '#666',
+                    fontFamily: 'Jost, sans-serif',
+                    margin: 0,
+                    lineHeight: '1.5'
+                  }}>
+                    Share details about what you're looking for to help me find the perfect match
+                  </p>
+                </div>
+
+                {/* Chat Messages */}
+                <div style={{
+                  flex: 1,
+                  padding: '24px',
+                  overflowY: 'auto',
+                  backgroundColor: '#fafafa'
+                }}>
+                  {chatMessages.map((msg, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        marginBottom: '20px',
+                        display: 'flex',
+                        justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start'
+                      }}
+                    >
+                      <div
+                        style={{
+                          maxWidth: '75%',
+                          padding: '14px 18px',
+                          borderRadius: '12px',
+                          backgroundColor: msg.role === 'user' ? '#000' : '#fff',
+                          color: msg.role === 'user' ? '#fff' : '#000',
+                          border: msg.role === 'assistant' ? '1px solid #e5e7eb' : 'none',
+                          boxShadow: msg.role === 'assistant' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+                        }}
+                      >
+                        <p style={{
+                          margin: 0,
+                          fontSize: '15px',
+                          lineHeight: '1.6',
+                          fontFamily: 'Jost, sans-serif'
+                        }}>
+                          {msg.content}
+                        </p>
+                        <p style={{
+                          margin: '8px 0 0 0',
+                          fontSize: '11px',
+                          opacity: 0.6,
+                          fontFamily: 'Jost, sans-serif'
+                        }}>
+                          {new Date(msg.timestamp).toLocaleTimeString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  {isLoading && (
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'flex-start',
+                      marginBottom: '20px'
+                    }}>
+                      <div style={{
+                        padding: '14px 18px',
+                        borderRadius: '12px',
+                        backgroundColor: '#fff',
+                        border: '1px solid #e5e7eb',
+                        color: '#666',
+                        fontFamily: 'Jost, sans-serif',
+                        fontSize: '15px'
+                      }}>
+                        AI is thinking...
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Chat Input */}
+                <div style={{
+                  padding: '20px 24px',
+                  borderTop: '2px solid #000',
+                  backgroundColor: '#fff'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    gap: '12px',
+                    alignItems: 'flex-end'
+                  }}>
+                    <textarea
+                      value={userMessage}
+                      onChange={(e) => setUserMessage(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      placeholder="E.g., 'I'm looking for casual shoes under $100' or 'Show me formal options'"
+                      disabled={isLoading}
+                      style={{
+                        flex: 1,
+                        minHeight: '60px',
+                        maxHeight: '120px',
+                        padding: '12px 16px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        fontSize: '15px',
+                        fontFamily: 'Jost, sans-serif',
+                        outline: 'none',
+                        resize: 'vertical',
+                        backgroundColor: isLoading ? '#f9fafb' : '#fff'
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = '#000';
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = '#d1d5db';
+                      }}
+                    />
+                    <button
+                      onClick={handleSendMessage}
+                      disabled={isLoading || !userMessage.trim()}
+                      style={{
+                        padding: '14px 28px',
+                        backgroundColor: (isLoading || !userMessage.trim()) ? '#ccc' : '#000',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontSize: '15px',
+                        fontWeight: '600',
+                        fontFamily: 'Jost, sans-serif',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                        cursor: (isLoading || !userMessage.trim()) ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.2s ease',
+                        whiteSpace: 'nowrap'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isLoading && userMessage.trim()) {
+                          e.currentTarget.style.backgroundColor = '#333';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isLoading && userMessage.trim()) {
+                          e.currentTarget.style.backgroundColor = '#000';
+                        }
+                      }}
+                    >
+                      {isLoading ? 'Sending...' : 'Send'}
+                    </button>
+                  </div>
+                  <p style={{
+                    fontSize: '12px',
+                    color: '#999',
+                    fontFamily: 'Jost, sans-serif',
+                    margin: '12px 0 0 0'
+                  }}>
+                    Press Enter to send, Shift+Enter for new line
+                  </p>
+                </div>
+              </div>
+
+              {/* Skip to Results Button */}
+              <div style={{
+                marginTop: '20px',
+                textAlign: 'center'
+              }}>
+                <button
+                  onClick={handleSearchFromConversation}
+                  disabled={isLoading || chatMessages.filter(m => m.role === 'user').length === 0}
+                  style={{
+                    padding: '12px 32px',
+                    backgroundColor: '#fff',
+                    color: '#000',
+                    border: '2px solid #000',
+                    borderRadius: '4px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    fontFamily: 'Jost, sans-serif',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    cursor: (isLoading || chatMessages.filter(m => m.role === 'user').length === 0) ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s ease',
+                    opacity: (isLoading || chatMessages.filter(m => m.role === 'user').length === 0) ? 0.5 : 1
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isLoading && chatMessages.filter(m => m.role === 'user').length > 0) {
+                      e.currentTarget.style.backgroundColor = '#000';
+                      e.currentTarget.style.color = '#fff';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isLoading && chatMessages.filter(m => m.role === 'user').length > 0) {
+                      e.currentTarget.style.backgroundColor = '#fff';
+                      e.currentTarget.style.color = '#000';
+                    }
+                  }}
+                >
+                  Show Me Results →
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
       )}
 
       {/* Add CSS for spinner animation */}

@@ -35,11 +35,9 @@ export async function invokeAgent(
       ? `User uploaded image at s3://${import.meta.env.VITE_S3_BUCKET}/${imageS3Key}. ${message}`
       : message;
 
-    // Use TSTALIASID which is the built-in test alias for draft versions
-    // This bypasses the need for a custom alias
     const command = new InvokeAgentCommand({
       agentId: import.meta.env.VITE_AGENT_ID,
-      agentAliasId: 'TSTALIASID', // Built-in test alias for draft agent versions
+      agentAliasId: 'TSTALIASID',
       sessionId: sessionId,
       inputText: inputText,
     });
