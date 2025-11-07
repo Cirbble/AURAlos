@@ -943,64 +943,42 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
                   <div style={{
                     width: '40px',
                     height: '40px',
-                    position: 'relative'
+                    position: 'relative',
+                    animation: 'rotate 1.2s linear infinite'
                   }}>
                     <div style={{
                       position: 'absolute',
-                      width: '100%',
-                      height: '100%',
-                      animation: 'rotate 1.2s linear infinite'
-                    }}>
-                      <div style={{
-                        position: 'absolute',
-                        width: '8px',
-                        height: '8px',
-                        borderRadius: '50%',
-                        background: '#6366F1',
-                        top: '0',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        opacity: 0.9
-                      }} />
-                    </div>
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      background: '#6366F1',
+                      top: '50%',
+                      left: '0',
+                      transform: 'translateY(-50%)',
+                      opacity: 0.9
+                    }} />
                     <div style={{
                       position: 'absolute',
-                      width: '100%',
-                      height: '100%',
-                      animation: 'rotate 1.2s linear infinite',
-                      animationDelay: '-0.4s'
-                    }}>
-                      <div style={{
-                        position: 'absolute',
-                        width: '8px',
-                        height: '8px',
-                        borderRadius: '50%',
-                        background: '#6366F1',
-                        top: '0',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        opacity: 0.6
-                      }} />
-                    </div>
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      background: '#6366F1',
+                      top: '50%',
+                      right: '0',
+                      transform: 'translateY(-50%)',
+                      opacity: 0.6
+                    }} />
                     <div style={{
                       position: 'absolute',
-                      width: '100%',
-                      height: '100%',
-                      animation: 'rotate 1.2s linear infinite',
-                      animationDelay: '-0.8s'
-                    }}>
-                      <div style={{
-                        position: 'absolute',
-                        width: '8px',
-                        height: '8px',
-                        borderRadius: '50%',
-                        background: '#6366F1',
-                        top: '0',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        opacity: 0.3
-                      }} />
-                    </div>
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      background: '#6366F1',
+                      top: '0',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      opacity: 0.3
+                    }} />
                   </div>
                 </div>
               ) : null}
@@ -1339,64 +1317,42 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
                   <div style={{
                     width: '40px',
                     height: '40px',
-                    position: 'relative'
+                    position: 'relative',
+                    animation: 'rotate 1.2s linear infinite'
                   }}>
                     <div style={{
                       position: 'absolute',
-                      width: '100%',
-                      height: '100%',
-                      animation: 'rotate 1.2s linear infinite'
-                    }}>
-                      <div style={{
-                        position: 'absolute',
-                        width: '8px',
-                        height: '8px',
-                        borderRadius: '50%',
-                        background: '#6366F1',
-                        top: '0',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        opacity: 0.9
-                      }} />
-                    </div>
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      background: '#6366F1',
+                      top: '50%',
+                      left: '0',
+                      transform: 'translateY(-50%)',
+                      opacity: 0.9
+                    }} />
                     <div style={{
                       position: 'absolute',
-                      width: '100%',
-                      height: '100%',
-                      animation: 'rotate 1.2s linear infinite',
-                      animationDelay: '-0.4s'
-                    }}>
-                      <div style={{
-                        position: 'absolute',
-                        width: '8px',
-                        height: '8px',
-                        borderRadius: '50%',
-                        background: '#6366F1',
-                        top: '0',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        opacity: 0.6
-                      }} />
-                    </div>
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      background: '#6366F1',
+                      top: '50%',
+                      right: '0',
+                      transform: 'translateY(-50%)',
+                      opacity: 0.6
+                    }} />
                     <div style={{
                       position: 'absolute',
-                      width: '100%',
-                      height: '100%',
-                      animation: 'rotate 1.2s linear infinite',
-                      animationDelay: '-0.8s'
-                    }}>
-                      <div style={{
-                        position: 'absolute',
-                        width: '8px',
-                        height: '8px',
-                        borderRadius: '50%',
-                        background: '#6366F1',
-                        top: '0',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        opacity: 0.3
-                      }} />
-                    </div>
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      background: '#6366F1',
+                      top: '0',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      opacity: 0.3
+                    }} />
                   </div>
                 </div>
               ) : null}

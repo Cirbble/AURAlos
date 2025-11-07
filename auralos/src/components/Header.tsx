@@ -112,7 +112,7 @@ export default function Header() {
             <Link to="/" style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '16px',
+              gap: '14px',
               textDecoration: 'none'
             }}>
               <svg width="230" height="44" viewBox="0 0 759.28 137.25" xmlns="http://www.w3.org/2000/svg">
@@ -121,17 +121,19 @@ export default function Header() {
                 <path d="M0,135.81H37.27l15.16-20.09h98.29l15,20.09h39.07L102.28.89Zm131.57-47H71.63l30-40.39Z" transform="translate(0.05 -0.87)"></path>
                 <path d="M731.22,19.6C715.07,7.52,692.52.87,670.08.87h-6.17c-22.44,0-45,6.65-61.14,18.73-17.43,13-28,30.75-28,49.9s10.63,36.86,28.07,49.89C619,131.47,641.55,138.12,664,138.12h6c22.44,0,45-6.65,61.16-18.73,17.44-13,28.06-30.75,28.07-49.89S748.65,32.63,731.22,19.6ZM670,109.78h-6c-31.27,0-55.72-18.91-55.73-40.29s24.41-40.28,55.68-40.28h6.13c31.27,0,55.7,18.91,55.68,40.28S701.28,109.78,670,109.78Z" transform="translate(0.05 -0.87)"></path>
               </svg>
-              <div style={{
-                height: '40px',
-                width: '1px',
-                background: '#e5e5e5'
-              }} />
+              <span style={{
+                fontSize: '22px',
+                fontWeight: '300',
+                color: '#999',
+                fontFamily: 'Jost, sans-serif'
+              }}>×</span>
               <img 
                 src="/src/assets/monoo-logo.png" 
                 alt="Auralos" 
                 style={{ 
-                  height: '28px',
-                  opacity: 0.9
+                  height: '42px',
+                  opacity: 0.9,
+                  marginTop: '-2px'
                 }} 
               />
             </Link>

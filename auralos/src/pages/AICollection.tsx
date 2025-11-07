@@ -883,67 +883,45 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                 }}
               >
                 {isLoading ? (
-                  <div style={{
+            <div style={{
                     width: '32px',
                     height: '32px',
-                    position: 'relative'
+                    position: 'relative',
+                    animation: 'rotate 1.2s linear infinite'
                   }}>
                     <div style={{
                       position: 'absolute',
-                      width: '100%',
-                      height: '100%',
-                      animation: 'rotate 1.2s linear infinite'
-                    }}>
-                      <div style={{
-                        position: 'absolute',
-                        width: '6px',
-                        height: '6px',
-                        borderRadius: '50%',
-                        background: '#fff',
-                        top: '0',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        opacity: 0.9
-                      }} />
-                    </div>
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: '50%',
+                      background: '#fff',
+                      top: '50%',
+                      left: '0',
+                      transform: 'translateY(-50%)',
+                      opacity: 0.9
+                    }} />
                     <div style={{
                       position: 'absolute',
-                      width: '100%',
-                      height: '100%',
-                      animation: 'rotate 1.2s linear infinite',
-                      animationDelay: '-0.4s'
-                    }}>
-                      <div style={{
-                        position: 'absolute',
-                        width: '6px',
-                        height: '6px',
-                        borderRadius: '50%',
-                        background: '#fff',
-                        top: '0',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        opacity: 0.6
-                      }} />
-                    </div>
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: '50%',
+                      background: '#fff',
+                      top: '50%',
+                      right: '0',
+                      transform: 'translateY(-50%)',
+                      opacity: 0.6
+                    }} />
                     <div style={{
                       position: 'absolute',
-                      width: '100%',
-                      height: '100%',
-                      animation: 'rotate 1.2s linear infinite',
-                      animationDelay: '-0.8s'
-                    }}>
-                      <div style={{
-                        position: 'absolute',
-                        width: '6px',
-                        height: '6px',
-                        borderRadius: '50%',
-                        background: '#fff',
-                        top: '0',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        opacity: 0.3
-                      }} />
-                    </div>
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: '50%',
+                      background: '#fff',
+                      top: '0',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      opacity: 0.3
+                    }} />
                   </div>
                 ) : (
                   'Search'
@@ -1229,71 +1207,49 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                   onMouseLeave={(e) => {
                     if (!isLoading && (selectedImage || textPrompt.trim())) {
                       e.currentTarget.style.backgroundColor = '#000';
-                  }
-                }}
+                    }
+                  }}
               >
                 {isLoading ? (
                   <div style={{
                     width: '32px',
                     height: '32px',
-                    position: 'relative'
+                    position: 'relative',
+                    animation: 'rotate 1.2s linear infinite'
                   }}>
                     <div style={{
                       position: 'absolute',
-                      width: '100%',
-                      height: '100%',
-                      animation: 'rotate 1.2s linear infinite'
-                    }}>
-                      <div style={{
-                        position: 'absolute',
-                        width: '6px',
-                        height: '6px',
-                        borderRadius: '50%',
-                        background: '#fff',
-                        top: '0',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        opacity: 0.9
-                      }} />
-                    </div>
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: '50%',
+                      background: '#fff',
+                      top: '50%',
+                      left: '0',
+                      transform: 'translateY(-50%)',
+                      opacity: 0.9
+                    }} />
                     <div style={{
                       position: 'absolute',
-                      width: '100%',
-                      height: '100%',
-                      animation: 'rotate 1.2s linear infinite',
-                      animationDelay: '-0.4s'
-                    }}>
-                      <div style={{
-                        position: 'absolute',
-                        width: '6px',
-                        height: '6px',
-                        borderRadius: '50%',
-                        background: '#fff',
-                        top: '0',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        opacity: 0.6
-                      }} />
-                    </div>
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: '50%',
+                      background: '#fff',
+                      top: '50%',
+                      right: '0',
+                      transform: 'translateY(-50%)',
+                      opacity: 0.6
+                    }} />
                     <div style={{
                       position: 'absolute',
-                      width: '100%',
-                      height: '100%',
-                      animation: 'rotate 1.2s linear infinite',
-                      animationDelay: '-0.8s'
-                    }}>
-                      <div style={{
-                        position: 'absolute',
-                        width: '6px',
-                        height: '6px',
-                        borderRadius: '50%',
-                        background: '#fff',
-                        top: '0',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        opacity: 0.3
-                      }} />
-                    </div>
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: '50%',
+                      background: '#fff',
+                      top: '0',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      opacity: 0.3
+                    }} />
                   </div>
                 ) : (
                   'Start AI Search'
@@ -1322,9 +1278,9 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                 }}>
               Review Your Image
             </h2>
-            <p style={{
+                <p style={{
               fontSize: '16px',
-              color: '#666',
+                  color: '#666',
               marginBottom: '50px',
               fontFamily: 'Jost, sans-serif'
             }}>
@@ -1340,64 +1296,42 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                   <div style={{
                     width: '36px',
                     height: '36px',
-                    position: 'relative'
+                    position: 'relative',
+                    animation: 'rotate 1.2s linear infinite'
                   }}>
                     <div style={{
                       position: 'absolute',
-                      width: '100%',
-                      height: '100%',
-                      animation: 'rotate 1.2s linear infinite'
-                    }}>
-                      <div style={{
-                        position: 'absolute',
-                        width: '7px',
-                        height: '7px',
-                        borderRadius: '50%',
-                        background: '#999',
-                        top: '0',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        opacity: 0.9
-                      }} />
-                    </div>
+                      width: '7px',
+                      height: '7px',
+                      borderRadius: '50%',
+                      background: '#999',
+                      top: '50%',
+                      left: '0',
+                      transform: 'translateY(-50%)',
+                      opacity: 0.9
+                    }} />
                     <div style={{
                       position: 'absolute',
-                      width: '100%',
-                      height: '100%',
-                      animation: 'rotate 1.2s linear infinite',
-                      animationDelay: '-0.4s'
-                    }}>
-                      <div style={{
-                        position: 'absolute',
-                        width: '7px',
-                        height: '7px',
-                        borderRadius: '50%',
-                        background: '#999',
-                        top: '0',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        opacity: 0.6
-                      }} />
-                    </div>
+                      width: '7px',
+                      height: '7px',
+                      borderRadius: '50%',
+                      background: '#999',
+                      top: '50%',
+                      right: '0',
+                      transform: 'translateY(-50%)',
+                      opacity: 0.6
+                    }} />
                     <div style={{
                       position: 'absolute',
-                      width: '100%',
-                      height: '100%',
-                      animation: 'rotate 1.2s linear infinite',
-                      animationDelay: '-0.8s'
-                    }}>
-                      <div style={{
-                        position: 'absolute',
-                        width: '7px',
-                        height: '7px',
-                        borderRadius: '50%',
-                        background: '#999',
-                        top: '0',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        opacity: 0.3
-                      }} />
-                    </div>
+                      width: '7px',
+                      height: '7px',
+                      borderRadius: '50%',
+                      background: '#999',
+                      top: '0',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      opacity: 0.3
+                    }} />
                   </div>
                   <span>Analyzing image</span>
                 </span>
@@ -1407,18 +1341,18 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
             </p>
 
             {/* Main Layout: Image + Input */}
-                  <div style={{
+                <div style={{
               display: 'grid',
               gridTemplateColumns: '1fr 1fr',
               gap: '60px',
               alignItems: 'start'
             }}>
               {/* Left: Image Preview */}
-              <div style={{
+                  <div style={{
                 border: '1px solid #E5E5E5',
                 padding: '30px',
                 backgroundColor: '#fafafa',
-                display: 'flex',
+                    display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
                 minHeight: '400px'
@@ -1435,7 +1369,7 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                     }}
                   />
                 )}
-            </div>
+                  </div>
 
               {/* Right: Specifications Input */}
               <div style={{
@@ -1463,20 +1397,20 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                   }}>
                     Describe any specific details, color preferences, or style modifications you'd like to see
                   </p>
-                </div>
+              </div>
 
                     <textarea
                   value={imageSpecifications}
                   onChange={(e) => setImageSpecifications(e.target.value)}
                   placeholder='Examples:&#10;• "these, but in black"&#10;• "similar style with a higher heel"&#10;• "same look but more casual"&#10;• "without any embellishments"'
                       disabled={isLoading}
-                      style={{
+                  style={{
                     width: '100%',
                     minHeight: '180px',
                     padding: '18px',
                         fontSize: '15px',
                     border: '1px solid #D1D5DB',
-                        fontFamily: 'Jost, sans-serif',
+                    fontFamily: 'Jost, sans-serif',
                         outline: 'none',
                         resize: 'vertical',
                     lineHeight: '1.6',
@@ -1487,7 +1421,7 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                 />
 
               <div style={{
-                  display: 'flex',
+                display: 'flex',
                   gap: '15px',
                   marginTop: '20px'
               }}>
@@ -1511,19 +1445,19 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                       cursor: isLoading ? 'not-allowed' : 'pointer',
                       letterSpacing: '1px',
                     textTransform: 'uppercase',
-                      fontFamily: 'Jost, sans-serif',
+                    fontFamily: 'Jost, sans-serif',
                       transition: 'all 0.2s'
                   }}
                   onMouseEnter={(e) => {
                       if (!isLoading) {
-                      e.currentTarget.style.backgroundColor = '#000';
-                      e.currentTarget.style.color = '#fff';
+                    e.currentTarget.style.backgroundColor = '#000';
+                    e.currentTarget.style.color = '#fff';
                     }
                   }}
                   onMouseLeave={(e) => {
                       if (!isLoading) {
-                      e.currentTarget.style.backgroundColor = '#fff';
-                      e.currentTarget.style.color = '#000';
+                    e.currentTarget.style.backgroundColor = '#fff';
+                    e.currentTarget.style.color = '#000';
                     }
                   }}
                 >
@@ -1532,7 +1466,7 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
 
                 <button
                     onClick={handleImageSearch}
-                    disabled={isLoading}
+                  disabled={isLoading}
                   style={{
                   flex: 1,
                       padding: '16px',
@@ -1563,64 +1497,42 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                       <div style={{
                         width: '32px',
                         height: '32px',
-                        position: 'relative'
+                        position: 'relative',
+                        animation: 'rotate 1.2s linear infinite'
                       }}>
                         <div style={{
                           position: 'absolute',
-                          width: '100%',
-                          height: '100%',
-                          animation: 'rotate 1.2s linear infinite'
-                        }}>
-                          <div style={{
-                            position: 'absolute',
-                            width: '6px',
-                            height: '6px',
-                            borderRadius: '50%',
-                            background: '#fff',
-                            top: '0',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            opacity: 0.9
-                          }} />
-                        </div>
+                          width: '6px',
+                          height: '6px',
+                          borderRadius: '50%',
+                          background: '#fff',
+                          top: '50%',
+                          left: '0',
+                          transform: 'translateY(-50%)',
+                          opacity: 0.9
+                        }} />
                         <div style={{
                           position: 'absolute',
-                          width: '100%',
-                          height: '100%',
-                          animation: 'rotate 1.2s linear infinite',
-                          animationDelay: '-0.4s'
-                        }}>
-                          <div style={{
-                            position: 'absolute',
-                            width: '6px',
-                            height: '6px',
-                            borderRadius: '50%',
-                            background: '#fff',
-                            top: '0',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            opacity: 0.6
-                          }} />
-                        </div>
+                          width: '6px',
+                          height: '6px',
+                          borderRadius: '50%',
+                          background: '#fff',
+                          top: '50%',
+                          right: '0',
+                          transform: 'translateY(-50%)',
+                          opacity: 0.6
+                        }} />
                         <div style={{
                           position: 'absolute',
-                          width: '100%',
-                          height: '100%',
-                          animation: 'rotate 1.2s linear infinite',
-                          animationDelay: '-0.8s'
-                        }}>
-                          <div style={{
-                            position: 'absolute',
-                            width: '6px',
-                            height: '6px',
-                            borderRadius: '50%',
-                            background: '#fff',
-                            top: '0',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            opacity: 0.3
-                          }} />
-                        </div>
+                          width: '6px',
+                          height: '6px',
+                          borderRadius: '50%',
+                          background: '#fff',
+                          top: '0',
+                          left: '50%',
+                          transform: 'translateX(-50%)',
+                          opacity: 0.3
+                        }} />
                       </div>
                     ) : (
                       'Find Products'
