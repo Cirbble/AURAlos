@@ -230,8 +230,11 @@ export default function AICollection() {
 
     try {
       // Wait for BDA metadata if not ready yet
-      let metadata = bdaMetadata;
-      console.log('📊 Current bdaMetadata state:', metadata);
+      // Check window.__bdaMetadata (set synchronously) instead of bdaMetadata state (updates async)
+      let metadata = window.__bdaMetadata || bdaMetadata;
+      console.log('📊 Current metadata state:', metadata);
+      console.log('📊 window.__bdaMetadata:', window.__bdaMetadata);
+      console.log('📊 bdaMetadata state:', bdaMetadata);
 
       if (!metadata) {
         console.log('⏳ Waiting for image analysis to complete...');
@@ -239,8 +242,11 @@ export default function AICollection() {
         // Claude Vision can take 20-40 seconds for analysis
         for (let i = 0; i < 120; i++) {
           await new Promise(resolve => setTimeout(resolve, 500));
-          if (bdaMetadata) {
-            metadata = bdaMetadata;
+
+          // Check window.__bdaMetadata first (set synchronously in background function)
+          metadata = window.__bdaMetadata || bdaMetadata;
+
+          if (metadata) {
             console.log('✅ Image analysis completed after', (i * 0.5).toFixed(1), 'seconds');
             console.log('📊 Metadata received:', metadata);
             break;
@@ -251,7 +257,7 @@ export default function AICollection() {
             console.log(`⏳ Still analyzing... ${i * 0.5}s elapsed`);
           }
         }
-        
+
         if (!metadata) {
           console.error('❌ Image analysis timed out after 60 seconds');
           throw new Error('Image analysis is taking longer than expected. Please try with a different image or use text search instead.');
