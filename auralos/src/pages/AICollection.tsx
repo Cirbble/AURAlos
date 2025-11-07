@@ -881,7 +881,7 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                 disabled={isLoading}
                 style={{
                   padding: '16px 60px',
-                  backgroundColor: isLoading ? '#999' : '#000',
+                  backgroundColor: isLoading ? '#000' : '#000',
                   color: '#fff',
                   border: 'none',
                   cursor: isLoading ? 'not-allowed' : 'pointer',
@@ -889,8 +889,14 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                   fontWeight: '500',
                   fontFamily: 'Jost, sans-serif',
                   letterSpacing: '0.5px',
-                  textTransform: 'uppercase',
-                  transition: 'all 0.2s ease'
+                  textTransform: 'none',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  opacity: isLoading ? 0.8 : 1,
+                  margin: '0 auto'
                 }}
                 onMouseEnter={(e) => {
                   if (!isLoading) e.currentTarget.style.backgroundColor = '#333';
@@ -899,7 +905,17 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                   if (!isLoading) e.currentTarget.style.backgroundColor = '#000';
                 }}
               >
-                {isLoading ? 'Searching...' : 'Search'}
+                {isLoading && (
+                  <span style={{
+                    width: '14px',
+                    height: '14px',
+                    border: '2px solid #ffffff40',
+                    borderTop: '2px solid #fff',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite'
+                  }} />
+                )}
+                {isLoading ? loadingMessages[loadingMessage] : 'Search'}
               </button>
             </div>
           )}
