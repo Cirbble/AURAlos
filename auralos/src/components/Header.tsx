@@ -21,58 +21,63 @@ export default function Header() {
         alignItems: 'center'
       }}>
         <div style={{
-          maxWidth: '1600px',
-          margin: '0 auto',
-          padding: '0 40px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
+          maxWidth: '100%',
           width: '100%'
         }}>
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '6px',
-            justifyContent: 'flex-start'
-          }}>
-            <span style={{ fontSize: '12px', fontWeight: '400' }}>FREE Shipping on Orders $99+</span>
-            <a href="/pages/customer-service" style={{ 
-              color: '#fff', 
-              textDecoration: 'underline',
-              fontSize: '12px',
-              fontWeight: '600'
-            }}>
-              Learn more
-            </a>
-          </div>
-          <div style={{ 
-            display: 'flex', 
+          <div style={{
+            maxWidth: '1920px',
+            margin: '0 auto',
+            padding: '0 80px',
+            display: 'flex',
+            justifyContent: 'space-between',
             alignItems: 'center',
-            gap: '18px', 
-            fontSize: '12px' 
+            width: '100%'
           }}>
-            <a href="/account/orders" style={{ color: '#fff', textDecoration: 'none', fontSize: '12px' }}>Track Order</a>
-            <span style={{ color: '#fff', opacity: 1, fontSize: '16px' }}>|</span>
-            <a href="/pages/stores" style={{ color: '#fff', textDecoration: 'none', fontSize: '12px' }}>Store Locator</a>
-            <span style={{ color: '#fff', opacity: 1, fontSize: '16px' }}>|</span>
-            <a href="/pages/help" style={{ color: '#fff', textDecoration: 'none', fontSize: '12px' }}>Help</a>
-            <span style={{ color: '#fff', opacity: 1, fontSize: '16px' }}>|</span>
-            <button style={{ 
-              background: 'none', 
-              border: 'none', 
-              color: '#fff', 
-              cursor: 'pointer',
-              fontSize: '12px',
-              padding: 0,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '6px',
+              justifyContent: 'flex-start'
             }}>
-              CAD (EN)
-              <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M1 1L5 5L9 1" stroke="white" strokeWidth="1" fill="none"/>
-              </svg>
-            </button>
+              <span style={{ fontSize: '12px', fontWeight: '400' }}>FREE Shipping on Orders $99+</span>
+              <a href="/pages/customer-service" style={{ 
+                color: '#fff', 
+                textDecoration: 'underline',
+                fontSize: '12px',
+                fontWeight: '600'
+              }}>
+                Learn more
+              </a>
+            </div>
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center',
+              gap: '18px', 
+              fontSize: '12px' 
+            }}>
+              <a href="/account/orders" style={{ color: '#fff', textDecoration: 'none', fontSize: '12px' }}>Track Order</a>
+              <span style={{ color: '#fff', opacity: 1, fontSize: '16px' }}>|</span>
+              <a href="/pages/stores" style={{ color: '#fff', textDecoration: 'none', fontSize: '12px' }}>Store Locator</a>
+              <span style={{ color: '#fff', opacity: 1, fontSize: '16px' }}>|</span>
+              <a href="/pages/help" style={{ color: '#fff', textDecoration: 'none', fontSize: '12px' }}>Help</a>
+              <span style={{ color: '#fff', opacity: 1, fontSize: '16px' }}>|</span>
+              <button style={{ 
+                background: 'none', 
+                border: 'none', 
+                color: '#fff', 
+                cursor: 'pointer',
+                fontSize: '12px',
+                padding: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}>
+                CAD (EN)
+                <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M1 1L5 5L9 1" stroke="white" strokeWidth="1" fill="none"/>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -85,18 +90,24 @@ export default function Header() {
         zIndex: 1000
       }}>
         <div style={{
-          maxWidth: '1600px',
+          maxWidth: '100%',
+          width: '100%',
           margin: '0 auto',
-          padding: '0 20px'
+          padding: '0'
         }}>
-          {/* Top Row: Logo + Icons */}
           <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            height: '65px',
-            paddingLeft: '0px'
+            maxWidth: '1920px',
+            margin: '0 auto',
+            padding: '0 80px'
           }}>
+            {/* Top Row: Logo + Icons */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              height: '65px',
+              paddingLeft: '0px'
+            }}>
             {/* Logo - Left */}
             <Link to="/" style={{
               display: 'flex',
@@ -112,7 +123,7 @@ export default function Header() {
             </Link>
 
             {/* Icons - Right */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '20px', paddingRight: '0px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingRight: '0px' }}>
               <button
                 onClick={() => setIsSearchOpen(true)}
                 style={{
@@ -186,7 +197,8 @@ export default function Header() {
             borderBottom: '2px solid #fff',
             boxShadow: '0 2px 0 0 #fff',
             paddingLeft: '0px',
-            marginTop: '-8px'
+            marginTop: '-8px',
+            width: '100%'
           }}>
             <ul style={{
               listStyle: 'none',
@@ -208,6 +220,7 @@ export default function Header() {
               <li><Link to="/find-your-fit" style={secondaryNavStyle}>Find Your <em style={{ fontStyle: 'italic' }}>Fit</em></Link></li>
             </ul>
           </nav>
+          </div>
         </div>
       </header>
 
