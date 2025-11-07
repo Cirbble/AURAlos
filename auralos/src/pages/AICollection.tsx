@@ -67,6 +67,15 @@ export default function AICollection() {
   const [isFocused, setIsFocused] = useState(false);
   const [imageSpecifications, setImageSpecifications] = useState('');
   const [bdaMetadata, setBdaMetadata] = useState<BDAImageMetadata | null>(null);
+  const [loadingMessage, setLoadingMessage] = useState(0);
+
+  const loadingMessages = [
+    "🔍 Analyzing your preferences...",
+    "✨ Matching with our catalog...",
+    "🎨 Finding perfect styles...",
+    "💡 Calculating best matches...",
+    "🎯 Almost there..."
+  ];
 
   const placeholders = [
     "black leather combat boots with lug soles for winter",
@@ -101,6 +110,20 @@ export default function AICollection() {
 
     return () => clearInterval(interval);
   }, [placeholders.length, textPrompt]);
+
+  // Loading message rotation
+  useEffect(() => {
+    if (!isLoading) {
+      setLoadingMessage(0);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setLoadingMessage(prev => (prev + 1) % loadingMessages.length);
+    }, 2000); // Rotate every 2 seconds
+
+    return () => clearInterval(interval);
+  }, [isLoading, loadingMessages.length]);
 
   // Helper function for STRICT product matching - NO FALLBACKS
   const findBestProductMatch = (productName: string): Product | undefined => {
@@ -1153,7 +1176,18 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                   }
                 }}
               >
-                {isLoading ? 'Starting AI Search...' : 'Start AI Search'}
+                {isLoading && (
+                  <span style={{
+                    width: '14px',
+                    height: '14px',
+                    border: '2px solid #ffffff40',
+                    borderTop: '2px solid #fff',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite',
+                    marginRight: '10px'
+                  }} />
+                )}
+                {isLoading ? loadingMessages[loadingMessage] : 'Start AI Search'}
                 </button>
           </div>
         </div>
@@ -1185,11 +1219,32 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
               fontFamily: 'Jost, sans-serif'
             }}>
               {!bdaMetadata ? (
-                <span style={{ color: '#999' }}>🔍 Analyzing image in background... You can add specifications below.</span>
+                <span style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '8px',
+                  color: '#999' 
+                }}>
+                  <span className="analyzing-spinner" style={{
+                    width: '16px',
+                    height: '16px',
+                    border: '2px solid #E5E5E5',
+                    borderTop: '2px solid #000',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite'
+                  }} />
+                  Analyzing image in background... You can add specifications below.
+                </span>
               ) : (
                 'Add any specifications or details to refine your search'
               )}
             </p>
+            <style>{`
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+            `}</style>
 
             {/* Main Layout: Image + Input */}
             <div style={{
@@ -1324,13 +1379,18 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                       fontSize: '14px',
                       fontWeight: '500',
                       color: '#fff',
-                      backgroundColor: isLoading ? '#999' : '#000',
+                      backgroundColor: isLoading ? '#000' : '#000',
                       border: 'none',
                       cursor: isLoading ? 'not-allowed' : 'pointer',
                       letterSpacing: '1px',
-                      textTransform: 'uppercase',
+                      textTransform: 'none',
                       fontFamily: 'Jost, sans-serif',
-                      transition: 'background-color 0.2s'
+                      transition: 'background-color 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '10px',
+                      opacity: isLoading ? 0.8 : 1
                     }}
                     onMouseEnter={(e) => {
                       if (!isLoading) e.currentTarget.style.backgroundColor = '#333';
@@ -1339,7 +1399,17 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                       if (!isLoading) e.currentTarget.style.backgroundColor = '#000';
                     }}
                   >
-                    {isLoading ? (bdaMetadata ? 'Searching...' : 'Analyzing & Searching...') : 'Find Products'}
+                    {isLoading && (
+                      <span style={{
+                        width: '14px',
+                        height: '14px',
+                        border: '2px solid #ffffff40',
+                        borderTop: '2px solid #fff',
+                        borderRadius: '50%',
+                        animation: 'spin 1s linear infinite'
+                      }} />
+                    )}
+                    {isLoading ? loadingMessages[loadingMessage] : 'Find Products'}
                   </button>
                 </div>
 
