@@ -225,11 +225,14 @@ export default function AICollection() {
   };
 
   const handleImageSearch = async () => {
+    console.log('🔍 handleImageSearch called');
     setIsLoading(true);
 
     try {
       // Wait for BDA metadata if not ready yet
       let metadata = bdaMetadata;
+      console.log('📊 Current bdaMetadata state:', metadata);
+
       if (!metadata) {
         console.log('⏳ Waiting for image analysis to complete...');
         // Wait up to 60 seconds for metadata (increased from 30)
@@ -239,6 +242,7 @@ export default function AICollection() {
           if (bdaMetadata) {
             metadata = bdaMetadata;
             console.log('✅ Image analysis completed after', (i * 0.5).toFixed(1), 'seconds');
+            console.log('📊 Metadata received:', metadata);
             break;
           }
 
@@ -253,6 +257,8 @@ export default function AICollection() {
           throw new Error('Image analysis is taking longer than expected. Please try with a different image or use text search instead.');
         }
       }
+
+      console.log('🚀 Starting agent invocation with metadata:', metadata);
 
       // Step 3: AUTONOMOUS MODE - Invoke agent with userIntent: "auto_match"
       // Format request for autonomous product matching
@@ -362,11 +368,15 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
 
       const agentResponse = await invokeAgent(agentPrompt, sessionId);
 
-      console.log('🤖 Agent Response (Image):', agentResponse.text);
+      console.log('✅ Agent invoked successfully');
+      console.log('📨 Agent Response (Image):', agentResponse.text);
+      console.log('🔍 Response length:', agentResponse.text.length);
+      console.log('📋 Response isComplete:', agentResponse.isComplete);
 
       // Step 4: Parse agent response as JSON - agent returns clean JSON
       let agentResults: AgentProductResult[] = [];
       try {
+        console.log('🔄 Starting to parse agent response...');
         console.log('📋 Full image agent response:', agentResponse.text);
         
         // Try parsing directly - agent returns clean JSON
@@ -454,29 +464,30 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
         }));
       }
 
+      console.log('✅ Final results ready for navigation:', results.length, 'products');
+      console.log('📦 Results:', results.map(r => r.product.name));
+
       // Navigate to results page with data
-      navigate('/ai-search-results', { 
+      console.log('🚀 Navigating to /ai-search-results...');
+      navigate('/ai-search-results', {
         state: { 
           searchResults: results,
           query: 'Visual Search Results'
         } 
       });
 
+      console.log('🎯 Navigation complete - results page should now display');
       setIsLoading(false);
 
     } catch (err) {
-      console.error('Error in autonomous image search:', err);
+      console.error('❌ Error in autonomous image search:', err);
+      console.error('Error type:', err instanceof Error ? err.constructor.name : typeof err);
+      console.error('Error message:', err instanceof Error ? err.message : String(err));
 
-      const fallbackMessage: AgentMessage = {
-        role: 'agent',
-        content: `✓ Image uploaded and analyzed. I encountered an issue finding matches. Would you like to describe what you're looking for?`,
-          timestamp: Date.now()
-        };
-      setMessages([fallbackMessage]);
-
-      setStage('conversation');
-      setError(`Search failed: ${err instanceof Error ? err.message : 'Unknown error'}. You can chat with me to refine your search!`);
-        setIsLoading(false);
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      setError(`Search failed: ${errorMsg}. Please try uploading a different image or use text search.`);
+      setIsLoading(false);
+      setStage('input'); // Go back to input page, not conversation
     }
   };
 
