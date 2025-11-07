@@ -2,7 +2,17 @@ import { useState } from 'react';
 import { products } from '../data/products';
 import { uploadImageToS3, validateImageFile, fileToBase64 } from '../services/s3Service';
 import { invokeAgent, generateSessionId } from '../services/bedrockService';
+import { analyzeImageWithBDA, formatBDAMetadataForAgent } from '../services/bdaService';
 import type { Product } from '../types/product';
+import type { BDAImageMetadata } from '../services/bdaService';
+
+// Extend Window interface to include BDA metadata
+declare global {
+  interface Window {
+    __bdaMetadata?: BDAImageMetadata;
+    __bdaOutputS3Uri?: string;
+  }
+}
 
 interface AgentProductResult {
   productId: string;
@@ -32,8 +42,6 @@ export default function AICollection() {
   // State management
   const [stage, setStage] = useState<Stage>('input');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [imageS3Key, setImageS3Key] = useState<string | null>(null);
   const [textPrompt, setTextPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,9 +61,8 @@ export default function AICollection() {
       return;
     }
 
-    setSelectedFile(file);
 
-    // Create preview
+    // Create preview for UI (this is just for display, not analysis)
     const preview = await fileToBase64(file);
     setSelectedImage(preview);
 
@@ -65,53 +72,82 @@ export default function AICollection() {
     // Show initial loading message
     const loadingMessage: ChatMessage = {
       role: 'assistant',
-      content: '✓ Image uploaded! Let me take a look at what you\'ve shared...',
+      content: '✓ Image uploaded! BDA is analyzing your image... This may take 10-20 seconds.',
       timestamp: Date.now()
     };
     setChatMessages([loadingMessage]);
 
-    // Upload to S3 and get AI description
+    // TRUE BDA WORKFLOW: Upload to S3 first, then analyze from S3
     setIsLoading(true);
     try {
-      // Upload to S3 first
+      // Step 1: Upload to S3 (true BDA workflow)
       const uploadResult = await uploadImageToS3(file);
-      if (uploadResult.success) {
-        setImageS3Key(uploadResult.s3Key);
-
-        // Ask the Bedrock agent to describe the image
-        const descriptionPrompt = `A user just uploaded an image to s3://${import.meta.env.VITE_S3_BUCKET}/${uploadResult.s3Key}. 
-        
-Please analyze this image and provide a brief, friendly description of what you see. Focus on:
-- What type of product/accessory it is
-- Key visual features (color, style, design elements)
-- The general category (shoes, bag, jewelry, etc.)
-
-Keep it conversational and under 2-3 sentences. Then ask what they're looking for.
-
-Example format: "I can see you've uploaded [description of item]. [Notable feature]. Tell me more about what you're looking for! What style, price range, or specific features are you interested in?"`;
-
-        const response = await invokeAgent(descriptionPrompt, sessionId, uploadResult.s3Key);
-
-        // Replace loading message with AI description
-        const descriptionMessage: ChatMessage = {
-          role: 'assistant',
-          content: response.text,
-          timestamp: Date.now()
-        };
-        setChatMessages([descriptionMessage]);
-      } else {
-        throw new Error('Failed to upload image');
+      if (!uploadResult.success) {
+        throw new Error(uploadResult.error || 'Failed to upload image');
       }
+
+      const s3Key = uploadResult.s3Key;
+
+      // Step 2: Analyze with BDA - fetches from S3, not base64!
+      // This is the true BDA workflow: S3 -> Analysis -> Structured Metadata
+      const bdaResult = await analyzeImageWithBDA(s3Key);
+
+      if (!bdaResult.success || !bdaResult.metadata) {
+        throw new Error(bdaResult.error || 'Failed to analyze image');
+      }
+
+      // Step 3: Format the BDA metadata into a friendly description
+      const metadata = bdaResult.metadata;
+      const descriptionParts = [];
+
+      if (metadata.name) {
+        descriptionParts.push(`**${metadata.name}**`);
+      } else if (metadata.product_type) {
+        descriptionParts.push(`a ${metadata.product_type}`);
+      }
+
+      if (metadata.primary_color) {
+        descriptionParts.push(`in ${metadata.primary_color}`);
+      }
+
+      if (metadata.material) {
+        descriptionParts.push(`made of ${metadata.material}`);
+      }
+
+      const descriptionText = descriptionParts.length > 0
+        ? descriptionParts.join(' ')
+        : 'your uploaded image';
+
+      // Step 4: Show BDA analysis to user and ask for additional description
+      const analysisMessage: ChatMessage = {
+        role: 'assistant',
+        content: `✓ I analyzed your image: ${descriptionText}!${metadata.description ? `\n\n${metadata.description}` : ''}\n\nWould you like to add any additional details about what you're looking for? For example:\n• Price range\n• Specific style preferences\n• Occasion or use case\n\nOr just type "search" to find similar products now!`,
+        timestamp: Date.now()
+      };
+      setChatMessages([analysisMessage]);
+
+      // Store metadata for agent - will be used when user sends message
+      window.__bdaMetadata = metadata;
+
+      setIsLoading(false);
+
     } catch (err) {
-      console.error('Error getting image description:', err);
-      // Fallback to generic message
+      console.error('Error analyzing image with BDA:', err);
+      console.error('Error type:', err instanceof Error ? err.constructor.name : typeof err);
+      console.error('Error message:', err instanceof Error ? err.message : String(err));
+      console.error('Full error:', JSON.stringify(err, Object.getOwnPropertyNames(err)));
+
+      // Show error message but allow chat to continue
       const fallbackMessage: ChatMessage = {
         role: 'assistant',
-        content: `✓ I can see you've uploaded an image${file.name ? ` (${file.name})` : ''}. Tell me more about what you're looking for! What style, price range, or specific features are you interested in?`,
+        content: `✓ Image uploaded. There was an issue with analysis. Please try describing what you're looking for.`,
         timestamp: Date.now()
       };
       setChatMessages([fallbackMessage]);
-    } finally {
+
+      // Keep in conversation stage so user can chat
+      setStage('conversation');
+      setError(`Image analysis failed: ${err instanceof Error ? err.message : 'Unknown error'}. You can still chat with me about what you're looking for!`);
       setIsLoading(false);
     }
   };
@@ -126,35 +162,68 @@ Example format: "I can see you've uploaded [description of item]. [Notable featu
     setError(null);
 
     try {
-      // Upload image to S3 if present and not already uploaded
-      let s3Key: string | undefined = imageS3Key || undefined;
-      if (selectedFile && !imageS3Key) {
-        const uploadResult = await uploadImageToS3(selectedFile);
-        if (!uploadResult.success) {
-          throw new Error(uploadResult.error || 'Failed to upload image');
-        }
-        s3Key = uploadResult.s3Key;
-        setImageS3Key(s3Key);
-      }
+      // Get BDA metadata if available
+      const bdaMetadata = window.__bdaMetadata;
 
       // Create search query asking for top 3 results with pros/cons in JSON format
-      const searchQuery = `Find the top 3 products that match this request: "${textPrompt.trim() || 'products similar to the uploaded image'}". 
-      
-Return ONLY a JSON array with exactly 3 products in this format:
+      let searchQuery = '';
+
+      if (bdaMetadata) {
+        searchQuery = `You are a product search assistant with access to a Knowledge Base containing ALDO product catalog.
+
+IMAGE ANALYSIS FROM BEDROCK DATA AUTOMATION (BDA):
+${formatBDAMetadataForAgent(bdaMetadata)}
+
+USER'S TEXT QUERY: "${textPrompt.trim() || 'No additional query - search based on image only'}"
+
+YOUR TASK:
+1. **Search your Knowledge Base** for ALDO products matching the image analysis
+2. Use vector similarity on: category (${bdaMetadata.product_category}), type (${bdaMetadata.product_type}), color (${bdaMetadata.primary_color}), material (${bdaMetadata.material}), style (${bdaMetadata.style})
+3. Apply user's text query as additional filter
+4. Return top 3 actual products from Knowledge Base
+
+IMPORTANT: Use Knowledge Base retrieval to find real ALDO products. Do not invent product IDs.
+
+Return ONLY valid JSON:
+\`\`\`json
 [
   {
-    "productId": "product-id",
-    "productName": "Product Name",
-    "reasoning": "Why this product matches the search",
+    "productId": "real-product-id-from-kb",
+    "productName": "Real Product Name from KB",
+    "reasoning": "Matches image: [explain]",
+    "pros": ["Matches ${bdaMetadata.primary_color} color", "Same ${bdaMetadata.product_type} type", "Similar ${bdaMetadata.style} style"],
+    "cons": ["Minor difference in [attribute]", "Slight variation in [feature]"]
+  }
+]
+\`\`\``;
+      } else {
+        searchQuery = `You are a product search assistant with access to a Knowledge Base containing ALDO product catalog.
+
+USER'S SEARCH REQUEST: "${textPrompt.trim() || 'Show me products'}"
+
+YOUR TASK:
+1. **Search your Knowledge Base** for ALDO products matching the request
+2. Use semantic search on product names, descriptions, and attributes
+3. Return top 3 actual products from Knowledge Base
+
+IMPORTANT: Use Knowledge Base retrieval to find real ALDO products. Do not make up product IDs or names.
+
+Return ONLY valid JSON:
+\`\`\`json
+[
+  {
+    "productId": "real-product-id-from-kb",
+    "productName": "Real Product Name from KB",
+    "reasoning": "This matches because...",
     "pros": ["Pro 1", "Pro 2", "Pro 3"],
     "cons": ["Con 1", "Con 2"]
   }
 ]
+\`\`\``;
+      }
 
-Important: Return ONLY the JSON array, no other text.`;
-
-      // Invoke Bedrock agent
-      const response = await invokeAgent(searchQuery, sessionId, s3Key);
+      // Invoke Bedrock agent - NO S3 KEY! Agent only gets BDA JSON output
+      const response = await invokeAgent(searchQuery, sessionId);
 
       // Parse the JSON response to get top 3 results
       const resultsData = parseAgentResponse(response.text);
@@ -198,16 +267,28 @@ Important: Return ONLY the JSON array, no other text.`;
     setIsLoading(true);
 
     try {
-      // Upload image to S3 if not already uploaded (for agent to reference)
-      if (selectedFile && !imageS3Key) {
-        try {
-          const uploadResult = await uploadImageToS3(selectedFile);
-          if (uploadResult.success) {
-            setImageS3Key(uploadResult.s3Key);
-          }
-        } catch (uploadErr) {
-          console.warn('S3 upload failed, continuing without S3 storage:', uploadErr);
-        }
+      // Get BDA metadata if available
+      const bdaMetadata = window.__bdaMetadata;
+
+      // Check if user wants to search immediately (after image upload)
+      const searchKeywords = ['search', 'find', 'show', 'go', 'yes', 'ok'];
+      const shouldSearchNow = bdaMetadata && searchKeywords.some(keyword =>
+        newUserMessage.content.toLowerCase().includes(keyword)
+      );
+
+      if (shouldSearchNow) {
+        // User wants to search with their description
+        const searchingMessage: ChatMessage = {
+          role: 'assistant',
+          content: `Perfect! Searching for products that match your image...`,
+          timestamp: Date.now()
+        };
+        setChatMessages(prev => [...prev, searchingMessage]);
+
+        // Trigger search
+        await handleSearchFromConversation();
+        setIsLoading(false);
+        return;
       }
 
       // Build conversation history for context
@@ -215,18 +296,33 @@ Important: Return ONLY the JSON array, no other text.`;
         .map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
         .filter(msg => msg); // Remove empty messages
 
-      // Build message for agent
-      const fullMessage = `
-${selectedImage ? 'User uploaded an image of a fashion product/accessory.' : ''}
+      // Build message for agent with BDA metadata ONLY (no S3 key!)
+      // Agent cannot read images - only receives BDA's structured output
+      let fullMessage = '';
+
+      if (bdaMetadata) {
+        // Include BDA analysis in agent context
+        fullMessage = `Image Analysis Results (from BDA):
+${formatBDAMetadataForAgent(bdaMetadata)}
+
 Previous conversation:
 ${conversationHistory.join('\n')}
 
 User's new message: ${userMessage}
 
 Please respond naturally and ask clarifying questions to help narrow down the perfect product. When you have enough information, say "I have enough information to show you the perfect matches!" and I'll show the results.`;
+      } else {
+        fullMessage = `
+Previous conversation:
+${conversationHistory.join('\n')}
 
-      // Use Bedrock agent
-      const response = await invokeAgent(fullMessage, sessionId, imageS3Key || undefined);
+User's new message: ${userMessage}
+
+Please respond naturally and ask clarifying questions to help narrow down the perfect product. When you have enough information, say "I have enough information to show you the perfect matches!" and I'll show the results.`;
+      }
+
+      // Use Bedrock agent - NO S3 KEY! Agent only gets BDA output
+      const response = await invokeAgent(fullMessage, sessionId);
 
       // Add AI response to chat
       const aiMessage: ChatMessage = {
@@ -259,19 +355,8 @@ Please respond naturally and ask clarifying questions to help narrow down the pe
     setIsLoading(true);
 
     try {
-      // Upload image to S3 if not already uploaded
-      let s3KeyToUse = imageS3Key;
-      if (selectedFile && !imageS3Key) {
-        try {
-          const uploadResult = await uploadImageToS3(selectedFile);
-          if (uploadResult.success) {
-            s3KeyToUse = uploadResult.s3Key;
-            setImageS3Key(uploadResult.s3Key);
-          }
-        } catch (uploadErr) {
-          console.warn('S3 upload failed, continuing without image context:', uploadErr);
-        }
-      }
+      // Get BDA metadata if available
+      const bdaMetadata = window.__bdaMetadata;
 
       // Build search query from entire conversation
       const conversationSummary = chatMessages
@@ -279,20 +364,74 @@ Please respond naturally and ask clarifying questions to help narrow down the pe
         .map(msg => msg.content)
         .join(' ');
 
-      const searchQuery = `Based on the uploaded image and user's requirements: "${conversationSummary}". 
-      
-Find the top 3 products that match. Return ONLY a JSON array:
+      let searchQuery = '';
+
+      if (bdaMetadata) {
+        // Use BDA metadata for enhanced search
+        // Agent receives ONLY the structured JSON from BDA, not the image!
+        searchQuery = `You are a product search assistant with access to a Knowledge Base containing ALDO product catalog.
+
+IMAGE ANALYSIS FROM BEDROCK DATA AUTOMATION (BDA):
+${formatBDAMetadataForAgent(bdaMetadata)}
+
+USER'S ADDITIONAL REQUIREMENTS: "${conversationSummary || 'None - just find products matching the image'}"
+
+YOUR TASK:
+1. **Search your Knowledge Base** for ALDO products that match the image analysis above
+2. Use vector similarity search on these attributes:
+   - Product Category: ${bdaMetadata.product_category || 'any'}
+   - Product Type: ${bdaMetadata.product_type || 'any'}  
+   - Primary Color: ${bdaMetadata.primary_color || 'any'}
+   - Material: ${bdaMetadata.material || 'any'}
+   - Style: ${bdaMetadata.style || 'any'}
+   - Tags: ${bdaMetadata.tags?.join(', ') || 'any'}
+   
+3. Apply user's additional requirements as filters
+4. Return the top 3 best matches from your Knowledge Base
+
+IMPORTANT: You MUST use the Knowledge Base retrieval action to search for actual ALDO products. Do not make up product IDs or names.
+
+Return ONLY valid JSON in this exact format:
+\`\`\`json
 [
   {
-    "productId": "product-id",
-    "productName": "Product Name",
-    "reasoning": "Why this product matches the search",
+    "productId": "actual-product-id-from-kb",
+    "productName": "Actual Product Name from KB",
+    "reasoning": "This product matches because [explain match to image analysis]",
+    "pros": ["Matches primary color ${bdaMetadata.primary_color}", "Same product type ${bdaMetadata.product_type}", "Similar style ${bdaMetadata.style}"],
+    "cons": ["Slight difference in [attribute]", "May vary in [feature]"]
+  }
+]
+\`\`\``;
+      } else {
+        searchQuery = `You are a product search assistant with access to a Knowledge Base containing ALDO product catalog.
+
+USER'S SEARCH QUERY: "${conversationSummary}"
+
+YOUR TASK:
+1. **Search your Knowledge Base** for ALDO products matching the user's query
+2. Use semantic search and vector similarity
+3. Return the top 3 best matches from your Knowledge Base
+
+IMPORTANT: You MUST use the Knowledge Base retrieval action to search for actual ALDO products. Do not make up product IDs or names.
+
+Return ONLY valid JSON:
+\`\`\`json
+[
+  {
+    "productId": "actual-product-id-from-kb",
+    "productName": "Actual Product Name from KB", 
+    "reasoning": "This product matches because...",
     "pros": ["Pro 1", "Pro 2", "Pro 3"],
     "cons": ["Con 1", "Con 2"]
   }
-]`;
+]
+\`\`\``;
+      }
 
-      const response = await invokeAgent(searchQuery, sessionId, s3KeyToUse || undefined);
+      // Agent searches knowledge base with BDA metadata - NO S3 KEY!
+      // Agent cannot read images, only the structured JSON output from BDA
+      const response = await invokeAgent(searchQuery, sessionId);
       const resultsData = parseAgentResponse(response.text);
 
       const mappedResults: SearchResult[] = resultsData.map((result: AgentProductResult) => {
@@ -320,11 +459,30 @@ Find the top 3 products that match. Return ONLY a JSON array:
   // Helper function to parse agent JSON response
   const parseAgentResponse = (responseText: string): AgentProductResult[] => {
     try {
-      // Try to extract JSON array from response
-      const jsonMatch = responseText.match(/\[[^\]]*]/);
+      console.log('Parsing agent response:', responseText);
+
+      // Try to extract JSON array from response - use a more flexible regex
+      const jsonMatch = responseText.match(/\[\s*\{[\s\S]*\}\s*\]/);
       if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
+        try {
+          return JSON.parse(jsonMatch[0]);
+        } catch (parseError) {
+          console.error('JSON parse error:', parseError);
+          console.log('Attempted to parse:', jsonMatch[0]);
+        }
       }
+
+      // Try to extract JSON object wrapped in results
+      const resultsMatch = responseText.match(/["']?results["']?\s*:\s*(\[[^\]]*\])/);
+      if (resultsMatch) {
+        try {
+          return JSON.parse(resultsMatch[1]);
+        } catch (parseError) {
+          console.error('Results parse error:', parseError);
+        }
+      }
+
+      console.warn('No valid JSON found, using fallback data');
 
       // If no JSON found, return mock data for top 3
       return [
@@ -476,7 +634,6 @@ Find the top 3 products that match. Return ONLY a JSON array:
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedImage(null);
-                      setSelectedFile(null);
                       setError(null);
                     }}
                     style={{
@@ -1501,3 +1658,4 @@ Find the top 3 products that match. Return ONLY a JSON array:
     </main>
   );
 }
+

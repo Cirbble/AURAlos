@@ -24,16 +24,17 @@ export interface AgentMessage {
 
 /**
  * Invoke the Bedrock Agent with a message
+ * Note: Agent CANNOT read images! Only receives text/JSON from BDA output
  */
 export async function invokeAgent(
   message: string,
-  sessionId: string,
-  imageS3Key?: string
+  sessionId: string
 ): Promise<AgentResponse> {
   try {
-    const inputText = imageS3Key
-      ? `User uploaded image at s3://${import.meta.env.VITE_S3_BUCKET}/${imageS3Key}. ${message}`
-      : message;
+    // Agent receives only text - no image references!
+    // If there was an image, BDA already extracted structured metadata
+    // and that metadata is included in the message text
+    const inputText = message;
 
     const command = new InvokeAgentCommand({
       agentId: import.meta.env.VITE_AGENT_ID,
