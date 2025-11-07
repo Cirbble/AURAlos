@@ -299,14 +299,6 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
         <div style={{ maxWidth: '1600px', margin: '0 auto', width: '100%' }}>
           {/* Search Query Display */}
           <div style={{
-            fontSize: '16px',
-            color: '#666',
-            marginBottom: '20px',
-            fontFamily: 'Jost, sans-serif'
-          }}>
-            Search by keyword, style, etc.
-          </div>
-          <div style={{
             fontSize: '28px',
             fontWeight: '500',
             marginBottom: '30px',
@@ -332,7 +324,7 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
             )}
           </div>
 
-          {/* Filters and Sort Bar */}
+          {/* Products Count Bar */}
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
@@ -347,15 +339,6 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
               fontFamily: 'Jost, sans-serif'
             }}>
               {searchResults.length} {searchResults.length === 1 ? 'Product' : 'Products'}
-            </div>
-            <div style={{
-              fontSize: '14px',
-              color: '#000',
-              fontFamily: 'Jost, sans-serif',
-              display: 'flex',
-              gap: '20px'
-            }}>
-              <span>SORT BY: RELEVANCE</span>
             </div>
           </div>
 
