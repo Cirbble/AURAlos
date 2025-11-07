@@ -41,29 +41,21 @@ export default function AISearchResults() {
   const [openEndedAnswer, setOpenEndedAnswer] = useState('');
   const [refinementRound, setRefinementRound] = useState(0);
   const [directRefinementInput, setDirectRefinementInput] = useState('');
-  const [loadingMessage, setLoadingMessage] = useState(0);
+  const [dotCount, setDotCount] = useState(0);
 
-  const loadingMessages = [
-    "🔍 Analyzing your preferences...",
-    "✨ Matching with our catalog...",
-    "🎨 Finding perfect styles...",
-    "💡 Calculating best matches...",
-    "🎯 Almost there..."
-  ];
-
-  // Loading message rotation
+  // Animated dots for loading
   useEffect(() => {
     if (!isLoadingQuestion) {
-      setLoadingMessage(0);
+      setDotCount(0);
       return;
     }
 
     const interval = setInterval(() => {
-      setLoadingMessage(prev => (prev + 1) % loadingMessages.length);
-    }, 2000); // Rotate every 2 seconds
+      setDotCount(prev => (prev + 1) % 4); // 0, 1, 2, 3 dots
+    }, 400); // Update every 400ms
 
     return () => clearInterval(interval);
-  }, [isLoadingQuestion, loadingMessages.length]);
+  }, [isLoadingQuestion]);
 
   useEffect(() => {
     // Redirect to find-your-fit if no results
@@ -977,7 +969,7 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
                       borderRadius: '50%',
                       animation: 'spin 1s linear infinite'
                     }} />
-                    {loadingMessages[loadingMessage]}
+                    {`Loading${'.'.repeat(dotCount)}`}
                   </div>
                 </div>
               ) : null}
@@ -1327,7 +1319,7 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
                       borderRadius: '50%',
                       animation: 'spin 1s linear infinite'
                     }} />
-                    {loadingMessages[loadingMessage]}
+                    {`Loading${'.'.repeat(dotCount)}`}
                   </div>
                 </div>
               ) : null}

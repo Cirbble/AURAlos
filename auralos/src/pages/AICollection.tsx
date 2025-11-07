@@ -67,15 +67,7 @@ export default function AICollection() {
   const [isFocused, setIsFocused] = useState(false);
   const [imageSpecifications, setImageSpecifications] = useState('');
   const [bdaMetadata, setBdaMetadata] = useState<BDAImageMetadata | null>(null);
-  const [loadingMessage, setLoadingMessage] = useState(0);
-
-  const loadingMessages = [
-    "🔍 Analyzing your preferences...",
-    "✨ Matching with our catalog...",
-    "🎨 Finding perfect styles...",
-    "💡 Calculating best matches...",
-    "🎯 Almost there..."
-  ];
+  const [dotCount, setDotCount] = useState(0);
 
   const placeholders = [
     "black leather combat boots with lug soles for winter",
@@ -111,19 +103,19 @@ export default function AICollection() {
     return () => clearInterval(interval);
   }, [placeholders.length, textPrompt]);
 
-  // Loading message rotation
+  // Animated dots for loading
   useEffect(() => {
     if (!isLoading) {
-      setLoadingMessage(0);
+      setDotCount(0);
       return;
     }
 
     const interval = setInterval(() => {
-      setLoadingMessage(prev => (prev + 1) % loadingMessages.length);
-    }, 2000); // Rotate every 2 seconds
+      setDotCount(prev => (prev + 1) % 4); // 0, 1, 2, 3 dots
+    }, 400); // Update every 400ms
 
     return () => clearInterval(interval);
-  }, [isLoading, loadingMessages.length]);
+  }, [isLoading]);
 
   // Helper function for STRICT product matching - NO FALLBACKS
   const findBestProductMatch = (productName: string): Product | undefined => {
@@ -202,22 +194,22 @@ export default function AICollection() {
     (async () => {
       try {
         // Step 1: Upload to S3
-        const uploadResult = await uploadImageToS3(file);
-        if (!uploadResult.success) {
-          throw new Error(uploadResult.error || 'Failed to upload image');
-        }
+      const uploadResult = await uploadImageToS3(file);
+      if (!uploadResult.success) {
+        throw new Error(uploadResult.error || 'Failed to upload image');
+      }
 
-        const s3Key = uploadResult.s3Key;
+      const s3Key = uploadResult.s3Key;
         setImageS3Key(s3Key);
 
         // Step 2: Analyze with BDA
-        const bdaResult = await analyzeImageWithBDA(s3Key);
+      const bdaResult = await analyzeImageWithBDA(s3Key);
 
-        if (!bdaResult.success || !bdaResult.metadata) {
-          throw new Error(bdaResult.error || 'Failed to analyze image');
-        }
+      if (!bdaResult.success || !bdaResult.metadata) {
+        throw new Error(bdaResult.error || 'Failed to analyze image');
+      }
 
-        const metadata = bdaResult.metadata;
+      const metadata = bdaResult.metadata;
 
         // Store metadata
         window.__bdaMetadata = metadata;
@@ -382,7 +374,7 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
           } else {
             console.warn('⚠️ Parsed JSON but no results array found. Keys:', Object.keys(parsed));
           }
-        } else {
+      } else {
           // Fallback: extract JSON between first { and last }
           const firstBrace = trimmed.indexOf('{');
           const lastBrace = trimmed.lastIndexOf('}');
@@ -428,8 +420,8 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
               return null;
             }
 
-            return {
-              product,
+        return {
+          product,
               matchScore: result.score || 0,
               reasoning: result.reasoning || '',
               pros: result.pros || [],
@@ -468,8 +460,8 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
       const fallbackMessage: AgentMessage = {
         role: 'agent',
         content: `✓ Image uploaded and analyzed. I encountered an issue finding matches. Would you like to describe what you're looking for?`,
-      timestamp: Date.now()
-    };
+          timestamp: Date.now()
+        };
       setMessages([fallbackMessage]);
 
       setStage('conversation');
@@ -915,7 +907,7 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                     animation: 'spin 1s linear infinite'
                   }} />
                 )}
-                {isLoading ? loadingMessages[loadingMessage] : 'Search'}
+                {isLoading ? `Searching${'.'.repeat(dotCount)}` : 'Search'}
               </button>
             </div>
           )}
@@ -1203,7 +1195,7 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                     marginRight: '10px'
                   }} />
                 )}
-                {isLoading ? loadingMessages[loadingMessage] : 'Start AI Search'}
+                {isLoading ? `Searching${'.'.repeat(dotCount)}` : 'Start AI Search'}
                 </button>
           </div>
         </div>
@@ -1221,11 +1213,11 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
             {/* Header */}
             <h2 style={{
               fontSize: '32px',
-              fontWeight: '500',
+                  fontWeight: '500',
               marginBottom: '10px',
-              fontFamily: 'Jost, sans-serif',
-              color: '#000'
-            }}>
+                  fontFamily: 'Jost, sans-serif',
+                  color: '#000'
+                }}>
               Review Your Image
             </h2>
             <p style={{
@@ -1249,7 +1241,7 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                     borderRadius: '50%',
                     animation: 'spin 1s linear infinite'
                   }} />
-                  Analyzing image in background... You can add specifications below.
+                  Analyzing image...
                 </span>
               ) : (
                 'Add any specifications or details to refine your search'
@@ -1263,7 +1255,7 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
             `}</style>
 
             {/* Main Layout: Image + Input */}
-            <div style={{
+                  <div style={{
               display: 'grid',
               gridTemplateColumns: '1fr 1fr',
               gap: '60px',
@@ -1280,18 +1272,18 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                 minHeight: '400px'
               }}>
                 {selectedImage && (
-                  <img
-                    src={selectedImage}
+                    <img
+                      src={selectedImage}
                     alt="Your uploaded image"
-                    style={{
+                      style={{
                       maxWidth: '100%',
                       maxHeight: '500px',
-                      height: 'auto',
+                        height: 'auto',
                       objectFit: 'contain'
                     }}
                   />
                 )}
-              </div>
+            </div>
 
               {/* Right: Specifications Input */}
               <div style={{
@@ -1321,20 +1313,20 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                   </p>
                 </div>
 
-                <textarea
+                    <textarea
                   value={imageSpecifications}
                   onChange={(e) => setImageSpecifications(e.target.value)}
                   placeholder='Examples:&#10;• "these, but in black"&#10;• "similar style with a higher heel"&#10;• "same look but more casual"&#10;• "without any embellishments"'
-                  disabled={isLoading}
-                  style={{
+                      disabled={isLoading}
+                      style={{
                     width: '100%',
                     minHeight: '180px',
                     padding: '18px',
-                    fontSize: '15px',
+                        fontSize: '15px',
                     border: '1px solid #D1D5DB',
-                    fontFamily: 'Jost, sans-serif',
-                    outline: 'none',
-                    resize: 'vertical',
+                        fontFamily: 'Jost, sans-serif',
+                        outline: 'none',
+                        resize: 'vertical',
                     lineHeight: '1.6',
                     transition: 'border-color 0.2s'
                   }}
@@ -1342,12 +1334,12 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                   onBlur={(e) => e.currentTarget.style.borderColor = '#D1D5DB'}
                 />
 
-                <div style={{
+              <div style={{
                   display: 'flex',
                   gap: '15px',
                   marginTop: '20px'
-                }}>
-                  <button
+              }}>
+                <button
                     onClick={() => {
                       setStage('input');
                       setSelectedImage(null);
@@ -1356,65 +1348,65 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                       setBdaMetadata(null);
                     }}
                     disabled={isLoading}
-                    style={{
+                  style={{
                       flex: '0 0 auto',
                       padding: '16px 32px',
-                      fontSize: '14px',
-                      fontWeight: '500',
+                    fontSize: '14px',
+                    fontWeight: '500',
                       color: '#000',
                       backgroundColor: '#fff',
                       border: '1px solid #000',
                       cursor: isLoading ? 'not-allowed' : 'pointer',
                       letterSpacing: '1px',
-                      textTransform: 'uppercase',
+                    textTransform: 'uppercase',
                       fontFamily: 'Jost, sans-serif',
                       transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
+                  }}
+                  onMouseEnter={(e) => {
                       if (!isLoading) {
-                        e.currentTarget.style.backgroundColor = '#000';
-                        e.currentTarget.style.color = '#fff';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '#000';
+                      e.currentTarget.style.color = '#fff';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
                       if (!isLoading) {
-                        e.currentTarget.style.backgroundColor = '#fff';
-                        e.currentTarget.style.color = '#000';
-                      }
-                    }}
-                  >
+                      e.currentTarget.style.backgroundColor = '#fff';
+                      e.currentTarget.style.color = '#000';
+                    }
+                  }}
+                >
                     Back
-                  </button>
+                </button>
 
-                  <button
+                <button
                     onClick={handleImageSearch}
                     disabled={isLoading}
-                    style={{
-                      flex: 1,
+                  style={{
+                  flex: 1,
                       padding: '16px',
                       fontSize: '14px',
                       fontWeight: '500',
-                      color: '#fff',
+                    color: '#fff',
                       backgroundColor: isLoading ? '#000' : '#000',
-                      border: 'none',
-                      cursor: isLoading ? 'not-allowed' : 'pointer',
+                    border: 'none',
+                    cursor: isLoading ? 'not-allowed' : 'pointer',
                       letterSpacing: '1px',
                       textTransform: 'none',
-                      fontFamily: 'Jost, sans-serif',
+                    fontFamily: 'Jost, sans-serif',
                       transition: 'background-color 0.2s',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       gap: '10px',
                       opacity: isLoading ? 0.8 : 1
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isLoading) e.currentTarget.style.backgroundColor = '#333';
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isLoading) e.currentTarget.style.backgroundColor = '#000';
-                    }}
-                  >
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isLoading) e.currentTarget.style.backgroundColor = '#333';
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isLoading) e.currentTarget.style.backgroundColor = '#000';
+                  }}
+                >
                     {isLoading && (
                       <span style={{
                         width: '14px',
@@ -1425,13 +1417,13 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                         animation: 'spin 1s linear infinite'
                       }} />
                     )}
-                    {isLoading ? loadingMessages[loadingMessage] : 'Find Products'}
-                  </button>
-                </div>
+                    {isLoading ? `Searching${'.'.repeat(dotCount)}` : 'Find Products'}
+                </button>
+              </div>
 
                 {error && (
-                  <p style={{
-                    fontSize: '14px',
+              <p style={{
+                fontSize: '14px',
                     color: '#ef4444',
                     fontFamily: 'Jost, sans-serif',
                     marginTop: '10px'
@@ -1439,8 +1431,8 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                     {error}
                   </p>
                 )}
-              </div>
             </div>
+          </div>
           </div>
         </section>
       )}
@@ -1454,46 +1446,46 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
         }}>
           <div style={{ maxWidth: '900px', margin: '0 auto' }}>
             {/* Header with Reset Button */}
-          <div style={{
-            display: 'flex',
+            <div style={{
+              display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
               marginBottom: '30px'
             }}>
               <h2 style={{ fontSize: '28px', margin: 0 }}>AI Conversation</h2>
-              <button
+                <button
                 onClick={handleReset}
-                style={{
+                  style={{
                   padding: '10px 20px',
-                  fontSize: '14px',
+                    fontSize: '14px',
                   color: '#6366F1',
                   background: '#fff',
                   border: '2px solid #6366F1',
                   borderRadius: '8px',
-                  cursor: 'pointer',
+                    cursor: 'pointer',
                   fontWeight: '500'
                 }}
               >
                 New Search
-              </button>
-            </div>
+                </button>
+              </div>
 
             {/* Image Preview (if uploaded) */}
                 {selectedImage && (
-                  <div style={{
+              <div style={{
                 marginBottom: '20px',
                 padding: '15px',
-                backgroundColor: '#fff',
+                      backgroundColor: '#fff',
                 borderRadius: '12px',
-                display: 'flex',
-                alignItems: 'center',
+                        display: 'flex',
+                        alignItems: 'center',
                 gap: '15px',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
                   }}>
                     <img
                       src={selectedImage}
                   alt="Your upload"
-                      style={{
+                        style={{
                     width: '80px',
                     height: '80px',
                     objectFit: 'cover',
@@ -1505,12 +1497,12 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                   <p style={{ fontSize: '12px', color: '#9CA3AF', margin: '4px 0 0 0' }}>
                     AI is analyzing this image
                 </p>
-              </div>
+                      </div>
             </div>
             )}
 
                 {/* Chat Messages */}
-                <div style={{
+                      <div style={{
               backgroundColor: '#fff',
               borderRadius: '12px',
               padding: '20px',
@@ -1523,7 +1515,7 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
               {messages.map((msg, idx) => (
                     <div
                       key={idx}
-                      style={{
+                              style={{
                         marginBottom: '20px',
                         display: 'flex',
                         justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start'
@@ -1548,11 +1540,11 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                         }}>
                           {new Date(msg.timestamp).toLocaleTimeString()}
                         </p>
-                      </div>
                     </div>
-                  ))}
+                  </div>
+                ))}
                   {isLoading && (
-                    <div style={{
+              <div style={{
                       display: 'flex',
                       justifyContent: 'flex-start',
                       marginBottom: '20px'
@@ -1566,14 +1558,14 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                     <span>AI is thinking</span>
                     <span className="typing-dots">...</span>
                       </div>
-                    </div>
-                  )}
+              </div>
+            )}
               <div ref={messagesEndRef} />
                 </div>
 
             {/* Input Box */}
-                  <div style={{
-                    display: 'flex',
+              <div style={{
+                display: 'flex',
               gap: '10px'
             }}>
               <input
@@ -1588,34 +1580,34 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                       }}
                 placeholder="Type your message..."
                       disabled={isLoading}
-                      style={{
-                        flex: 1,
+                  style={{
+                    flex: 1,
                   padding: '14px 16px',
                   fontSize: '16px',
                   borderRadius: '12px',
                   border: '2px solid #D1D5DB',
-                        outline: 'none',
+                    outline: 'none',
                   fontFamily: 'inherit'
-                      }}
-                    />
-                    <button
+                  }}
+                />
+                <button
                       onClick={handleSendMessage}
                 disabled={isLoading || !userInput.trim()}
-                      style={{
+                  style={{
                   padding: '14px 30px',
                         fontSize: '16px',
                           fontWeight: '600',
-                          color: '#fff',
+                    color: '#fff',
                   background: (isLoading || !userInput.trim())
                     ? '#9CA3AF'
                     : 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)',
-                          border: 'none',
+                    border: 'none',
                   borderRadius: '12px',
                   cursor: (isLoading || !userInput.trim()) ? 'not-allowed' : 'pointer'
                 }}
               >
                 Send
-                      </button>
+                </button>
             </div>
           </div>
         </section>
