@@ -178,48 +178,31 @@ export default function AICollection() {
     // Background processing - upload and analyze
     (async () => {
       try {
-        console.log('🚀 Starting background image upload and analysis...');
-
         // Step 1: Upload to S3
-        console.log('📤 Uploading image to S3...');
-        const uploadResult = await uploadImageToS3(file);
-        if (!uploadResult.success) {
-          throw new Error(uploadResult.error || 'Failed to upload image');
-        }
+      const uploadResult = await uploadImageToS3(file);
+      if (!uploadResult.success) {
+        throw new Error(uploadResult.error || 'Failed to upload image');
+      }
 
-        const s3Key = uploadResult.s3Key;
+      const s3Key = uploadResult.s3Key;
         setImageS3Key(s3Key);
-        console.log('✅ Image uploaded to S3:', s3Key);
 
-        // Step 2: Analyze with BDA/Claude Vision
-        console.log('🔍 Starting image analysis with Claude Vision...');
-        console.log('⏱️  This may take 20-40 seconds...');
-        const startTime = Date.now();
+        // Step 2: Analyze with BDA
+      const bdaResult = await analyzeImageWithBDA(s3Key);
 
-        const bdaResult = await analyzeImageWithBDA(s3Key);
+      if (!bdaResult.success || !bdaResult.metadata) {
+        throw new Error(bdaResult.error || 'Failed to analyze image');
+      }
 
-        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-        console.log(`⏱️  Analysis took ${elapsed}s`);
-
-        if (!bdaResult.success || !bdaResult.metadata) {
-          const errorMsg = bdaResult.error || 'Failed to analyze image';
-          console.error('❌ BDA analysis failed:', errorMsg);
-          throw new Error(errorMsg);
-        }
-
-        const metadata = bdaResult.metadata;
-        console.log('✅ Image analysis successful:', metadata);
+      const metadata = bdaResult.metadata;
 
         // Store metadata
         window.__bdaMetadata = metadata;
         setBdaMetadata(metadata);
-        console.log('✅ Metadata stored and ready for search');
 
       } catch (err) {
-        console.error('❌ Error in background image analysis:', err);
-        const errorMsg = err instanceof Error ? err.message : 'Background analysis failed';
-        setError(`${errorMsg} You can still try text search.`);
-        // Don't set bdaMetadata, which will cause handleImageSearch to timeout with helpful message
+        console.error('❌ Error analyzing image:', err);
+        setError(err instanceof Error ? err.message : 'Background analysis failed. You can still search.');
       }
     })();
   };
@@ -229,18 +212,18 @@ export default function AICollection() {
     setIsLoading(true);
 
     try {
-      // Wait for BDA metadata if not ready yet
+      // Wait for BDA metadata - NO TIMEOUT, let it take as long as needed
       // Check window.__bdaMetadata (set synchronously) instead of bdaMetadata state (updates async)
       let metadata = window.__bdaMetadata || bdaMetadata;
-      console.log('📊 Current metadata state:', metadata);
+      console.log('📊 Checking for metadata...');
       console.log('📊 window.__bdaMetadata:', window.__bdaMetadata);
       console.log('📊 bdaMetadata state:', bdaMetadata);
 
       if (!metadata) {
-        console.log('⏳ Waiting for image analysis to complete...');
-        // Wait up to 60 seconds for metadata (increased from 30)
-        // Claude Vision can take 20-40 seconds for analysis
-        for (let i = 0; i < 120; i++) {
+        console.log('⏳ Waiting for image analysis to complete (no timeout)...');
+        // Wait indefinitely - check every 500ms until metadata is ready
+        let i = 0;
+        while (!metadata) {
           await new Promise(resolve => setTimeout(resolve, 500));
 
           // Check window.__bdaMetadata first (set synchronously in background function)
@@ -253,15 +236,13 @@ export default function AICollection() {
           }
 
           // Log progress every 5 seconds
+          i++;
           if (i > 0 && i % 10 === 0) {
-            console.log(`⏳ Still analyzing... ${i * 0.5}s elapsed`);
+            console.log(`⏳ Still analyzing... ${(i * 0.5).toFixed(1)}s elapsed (waiting for Claude Vision...)`);
           }
         }
-
-        if (!metadata) {
-          console.error('❌ Image analysis timed out after 60 seconds');
-          throw new Error('Image analysis is taking longer than expected. Please try with a different image or use text search instead.');
-        }
+      } else {
+        console.log('✅ Metadata already available:', metadata);
       }
 
       console.log('🚀 Starting agent invocation with metadata:', metadata);
@@ -374,15 +355,11 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
 
       const agentResponse = await invokeAgent(agentPrompt, sessionId);
 
-      console.log('✅ Agent invoked successfully');
-      console.log('📨 Agent Response (Image):', agentResponse.text);
-      console.log('🔍 Response length:', agentResponse.text.length);
-      console.log('📋 Response isComplete:', agentResponse.isComplete);
+      console.log('🤖 Agent Response (Image):', agentResponse.text);
 
       // Step 4: Parse agent response as JSON - agent returns clean JSON
       let agentResults: AgentProductResult[] = [];
       try {
-        console.log('🔄 Starting to parse agent response...');
         console.log('📋 Full image agent response:', agentResponse.text);
         
         // Try parsing directly - agent returns clean JSON
@@ -470,11 +447,7 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
         }));
       }
 
-      console.log('✅ Final results ready for navigation:', results.length, 'products');
-      console.log('📦 Results:', results.map(r => r.product.name));
-
       // Navigate to results page with data
-      console.log('🚀 Navigating to /ai-search-results...');
       navigate('/ai-search-results', {
         state: { 
           searchResults: results,
@@ -482,18 +455,21 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
         } 
       });
 
-      console.log('🎯 Navigation complete - results page should now display');
       setIsLoading(false);
 
     } catch (err) {
-      console.error('❌ Error in autonomous image search:', err);
-      console.error('Error type:', err instanceof Error ? err.constructor.name : typeof err);
-      console.error('Error message:', err instanceof Error ? err.message : String(err));
+      console.error('Error in autonomous image search:', err);
 
-      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-      setError(`Search failed: ${errorMsg}. Please try uploading a different image or use text search.`);
-      setIsLoading(false);
-      setStage('input'); // Go back to input page, not conversation
+      const fallbackMessage: AgentMessage = {
+        role: 'agent',
+        content: `✓ Image uploaded and analyzed. I encountered an issue finding matches. Would you like to describe what you're looking for?`,
+          timestamp: Date.now()
+        };
+      setMessages([fallbackMessage]);
+
+      setStage('conversation');
+      setError(`Search failed: ${err instanceof Error ? err.message : 'Unknown error'}. You can chat with me to refine your search!`);
+        setIsLoading(false);
     }
   };
 
