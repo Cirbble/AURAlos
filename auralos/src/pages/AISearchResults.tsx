@@ -930,12 +930,6 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
                   </div>
                 </div>
               ) : null}
-              <style>{`
-                @keyframes spin {
-                  0% { transform: rotate(0deg); }
-                  100% { transform: rotate(360deg); }
-                }
-              `}</style>
 
 
               {/* Cancel Refinement Button */}
