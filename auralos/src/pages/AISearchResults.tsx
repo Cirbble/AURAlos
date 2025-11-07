@@ -94,29 +94,25 @@ export default function AISearchResults() {
                   position: 'absolute',
                   top: '10px',
                   left: '10px',
-                  background: 'rgba(99, 102, 241, 0.95)',
+                  background: '#000',
                   color: '#fff',
-                  padding: '6px 12px',
-                  borderRadius: '4px',
-                  fontSize: '11px',
-                  fontWeight: '600',
+                  padding: '5px 10px',
+                  fontSize: '10px',
+                  fontWeight: '500',
                   fontFamily: 'Jost, sans-serif',
                   textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  zIndex: 10,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
+                  letterSpacing: '1px',
+                  zIndex: 10
                 }}>
-                  <span>✨</span> AI MATCH {result.matchScore}%
+                  {result.matchScore}% MATCH
                 </div>
 
                 {/* AI Analysis Section */}
                 <div style={{
                   marginTop: '20px',
                   padding: '20px',
-                  background: '#F9FAFB',
-                  borderRadius: '4px',
+                  border: '1px solid #E5E5E5',
+                  background: '#fff',
                   fontFamily: 'Jost, sans-serif'
                 }}>
                   {/* Why This Matches */}
@@ -124,7 +120,7 @@ export default function AISearchResults() {
                     <div style={{
                       fontSize: '11px',
                       fontWeight: '600',
-                      color: '#6366F1',
+                      color: '#000',
                       textTransform: 'uppercase',
                       letterSpacing: '1px',
                       marginBottom: '8px'
@@ -133,7 +129,7 @@ export default function AISearchResults() {
                     </div>
                     <div style={{
                       fontSize: '13px',
-                      color: '#374151',
+                      color: '#666',
                       lineHeight: '1.6'
                     }}>
                       {result.reasoning}
@@ -146,7 +142,7 @@ export default function AISearchResults() {
                       <div style={{
                         fontSize: '11px',
                         fontWeight: '600',
-                        color: '#059669',
+                        color: '#000',
                         textTransform: 'uppercase',
                         letterSpacing: '1px',
                         marginBottom: '8px'
@@ -157,7 +153,7 @@ export default function AISearchResults() {
                         margin: 0,
                         paddingLeft: '18px',
                         fontSize: '13px',
-                        color: '#374151',
+                        color: '#666',
                         lineHeight: '1.6'
                       }}>
                         {result.pros.map((pro, i) => (
@@ -173,7 +169,7 @@ export default function AISearchResults() {
                       <div style={{
                         fontSize: '11px',
                         fontWeight: '600',
-                        color: '#DC2626',
+                        color: '#000',
                         textTransform: 'uppercase',
                         letterSpacing: '1px',
                         marginBottom: '8px'
@@ -184,7 +180,7 @@ export default function AISearchResults() {
                         margin: 0,
                         paddingLeft: '18px',
                         fontSize: '13px',
-                        color: '#374151',
+                        color: '#666',
                         lineHeight: '1.6'
                       }}>
                         {result.cons.map((con, i) => (
@@ -208,27 +204,26 @@ export default function AISearchResults() {
             <button
               onClick={() => navigate('/find-your-fit')}
               style={{
-                padding: '16px 32px',
-                fontSize: '14px',
+                padding: '14px 28px',
+                fontSize: '12px',
                 color: '#fff',
                 background: '#000',
                 border: 'none',
-                borderRadius: '50px',
                 cursor: 'pointer',
                 fontWeight: '500',
                 fontFamily: 'Jost, sans-serif',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                transition: 'transform 0.2s',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                transition: 'background 0.2s',
                 textTransform: 'uppercase',
-                letterSpacing: '0.5px',
+                letterSpacing: '1px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#333'}
+              onMouseLeave={(e) => e.currentTarget.style.background = '#000'}
             >
-              <span style={{ fontSize: '18px' }}>←</span> Back to Find My Fit
+              <span style={{ fontSize: '16px' }}>←</span> Back to Find My Fit
             </button>
           </div>
         </div>

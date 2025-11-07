@@ -67,16 +67,16 @@ export default function AICollection() {
   const [isFocused, setIsFocused] = useState(false);
 
   const placeholders = [
-    "black leather boots",
-    "white sneakers",
-    "heeled sandals",
-    "crossbody bags",
-    "ankle boots",
-    "loafers",
-    "platform heels",
-    "tote bags",
-    "mules",
-    "oxfords"
+    "black leather combat boots with lug soles for winter",
+    "white minimalist sneakers with platform soles",
+    "strappy heeled sandals in metallic gold for events",
+    "cognac brown crossbody bags with chain straps",
+    "burgundy suede ankle boots with block heels",
+    "classic penny loafers in dark brown leather",
+    "chunky platform heels in patent leather",
+    "oversized tote bags with structured silhouette",
+    "pointed-toe mules with kitten heels in beige",
+    "oxford dress shoes in polished black leather"
   ];
 
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
@@ -86,14 +86,19 @@ export default function AICollection() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Carousel animation
+  // Carousel animation - only when user is NOT typing
   useEffect(() => {
+    // Don't animate if user is typing
+    if (textPrompt.length > 0) {
+      return;
+    }
+
     const interval = setInterval(() => {
       setPlaceholderIndex(prev => (prev + 1) % placeholders.length);
-    }, 2500);
+    }, 3000); // Slightly slower for longer text
 
     return () => clearInterval(interval);
-  }, [placeholders.length]);
+  }, [placeholders.length, textPrompt]);
 
   // Helper function for STRICT product matching - NO FALLBACKS
   const findBestProductMatch = (productName: string): Product | undefined => {
@@ -239,19 +244,24 @@ export default function AICollection() {
 
       const agentPrompt = `${JSON.stringify(autonomousRequest, null, 2)}
 
-CRITICAL INSTRUCTIONS - YOU MUST RETURN 3 PRODUCTS:
+CRITICAL INSTRUCTIONS - YOU MUST ALWAYS RETURN 3 PRODUCTS IN VALID JSON:
 
 1. The user uploaded an image showing: ${descriptionForPrompt}
    - Product category from image: ${metadata.product_category || 'unknown'}
    - Product type from image: ${metadata.product_type || 'unknown'}
+   - **ONLY return products that EXIST in the knowledge base**
+   - DO NOT make up product names, DO NOT hallucinate products
+   - VERIFY each product name exists before including it in results
+   - **IMPORTANT**: Consider if the uploaded item is even related to fashion/shoes/bags/accessories
+     * If user uploads food, animals, abstract objects → score should be 5-15% (completely unrelated)
 
-2. **PRIORITY MATCHING RULES (CRITICAL)**:
+2. Search the knowledge base (ALDO shoes, bags, accessories only)
+
+3. **PRIORITY MATCHING RULES (CRITICAL)**:
    - IF user uploaded SHOES/BOOTS → Find ONLY shoes/boots (same category)
    - IF user uploaded BAGS → Find ONLY bags (same category)
    - IF user uploaded ACCESSORIES → Find ONLY accessories (same category)
    - IF user uploaded CLOTHING/DRESS → Find complementary shoes, bags, OR accessories
-   
-3. Search the knowledge base (ALDO shoes, bags, accessories only)
 
 4. **SAME CATEGORY FIRST**: If the uploaded item is a shoe/bag/accessory from ALDO, prioritize finding the EXACT or SIMILAR items in that category
    - Example: Boots uploaded → Return boots/shoes ONLY
@@ -263,27 +273,68 @@ CRITICAL INSTRUCTIONS - YOU MUST RETURN 3 PRODUCTS:
    - Match by STYLE (e.g., combat boots → similar combat boots)
    - Match by MATERIAL (e.g., leather → leather products)
 
-6. Return EXACTLY in this JSON format (NO text before or after):
+6. **ALWAYS RETURN RESULTS**: Even if no perfect matches exist, return the 3 CLOSEST products:
+   - If perfect match (meets ALL criteria) → high score (80-100)
+   - If close match (meets MOST criteria, minor differences) → medium score (50-79)
+   - If partial match (meets SOME criteria, e.g., right type but wrong color) → low score (25-49)
+   - If poor match (barely relevant, e.g., completely wrong color/style) → very low score (10-24)
+   - If completely unrelated (uploaded item has NO connection to catalog) → extremely low score (5-15)
+   - NEVER return empty results array - always find the closest 3 products
+   - Example: Upload green shoe but only brown shoes exist → brown shoes get 10-20% (wrong color)
+   - Example: Upload food/random object but catalog only has shoes/bags → products get 5-10% (completely unrelated)
+   - BE BRUTALLY HONEST with scores - if uploaded item has NO relation to product category, score should be 5-15%
+
+7. Return EXACTLY in this JSON format (NO text before or after):
 
 {
   "results": [
     {
-      "productName": "Product Name (Color Variant)",
+      "productName": "Miyabell (Other Brown)",
       "score": 85,
       "reasoning": "This [bag/shoe/accessory] matches your uploaded ${metadata.product_type || 'item'} because [explain how it's similar or complementary]",
       "pros": ["Matches the color palette", "Same product category", "Similar style"],
       "cons": ["Slightly different shade", "Different specific style"]
+    },
+    {
+      "productName": "Samuel (Dark Green)",
+      "score": 75,
+      "reasoning": "...",
+      "pros": ["..."],
+      "cons": ["..."]
+    },
+    {
+      "productName": "Snakesa (Black Gold Multi)",
+      "score": 65,
+      "reasoning": "...",
+      "pros": ["..."],
+      "cons": ["..."]
     }
   ]
 }
 
-7. **CRITICAL**: productName MUST include the color variant in parentheses exactly as it appears in the knowledge base
-   - Example: "Samuel (Dark Green)" NOT "Samuel" or "Samuel Green"
-   - Example: "Blyth (Brown)" NOT "Blyth" or "Brown Blyth"
-   - Check the knowledge base for the EXACT format including color in parentheses
+NOTICE: All productName values include (Color) - this is MANDATORY!
 
-8. **YOU MUST return 3 products** - never return empty results array
-9. **RESPECT CATEGORY PRIORITY** - If they uploaded shoes, return ONLY shoes (not bags or accessories)`;
+8. In the "reasoning" field:
+   - ALWAYS reference what the user uploaded
+   - If the match is poor/unrelated, be HONEST: "While the uploaded item is not related to our catalog, this is the closest available product..."
+   - If the match is good, explain why this product matches the uploaded image
+
+9. **CRITICAL - EXACT PRODUCT NAMES REQUIRED (MOST IMPORTANT RULE)**:
+   - **EVERY productName MUST include (Color) in parentheses** - NO EXCEPTIONS
+   - productName MUST be EXACTLY as it appears in the knowledge base - DO NOT shorten or modify
+   - Example: "Samuel (Dark Green)" NOT "Samuel" or "Samuel Green" or "Samuel (Green)"
+   - Example: "Blyth (Brown)" NOT "Blyth" or "Brown Blyth"
+   - Example: "Snakesa (Black Gold Multi)" NOT "Snakesa (Multi)" or "Snakesa"
+   - Example: "Miyabell (Other Brown)" NOT "Miyabell" or "Miyabell Brown"
+   - Example: "Miyabell (Print)" NOT "Miyabell" or "Miyabell Print"
+   - Use the COMPLETE color name in parentheses - if KB says "(Black Gold Multi)", use that EXACTLY
+   - **IF YOU CANNOT FIND THE EXACT COLOR VARIANT, SEARCH THE KNOWLEDGE BASE AGAIN**
+   - VERIFY the product WITH COLOR exists in the knowledge base before returning it
+   - NEVER return product names without (Color) in parentheses
+   - NEVER make up product names or abbreviate color variants
+
+10. **YOU MUST return 3 products** - never return empty results array, never return invalid JSON
+11. **RESPECT CATEGORY PRIORITY** - If they uploaded shoes, return ONLY shoes (not bags or accessories)`;
 
       const agentResponse = await invokeAgent(agentPrompt, sessionId);
 
@@ -380,8 +431,8 @@ CRITICAL INSTRUCTIONS - YOU MUST RETURN 3 PRODUCTS:
       const fallbackMessage: AgentMessage = {
         role: 'agent',
         content: `✓ Image uploaded and analyzed. I encountered an issue finding matches. Would you like to describe what you're looking for?`,
-          timestamp: Date.now()
-        };
+      timestamp: Date.now()
+    };
       setMessages([fallbackMessage]);
 
       setStage('conversation');
@@ -399,8 +450,8 @@ CRITICAL INSTRUCTIONS - YOU MUST RETURN 3 PRODUCTS:
 
     if (!selectedImage && !textPrompt.trim()) {
       setError('Please upload an image or enter a description');
-      return;
-    }
+        return;
+      }
 
     setIsLoading(true);
     setError(null);
@@ -426,29 +477,78 @@ CRITICAL INSTRUCTIONS - YOU MUST RETURN 3 PRODUCTS:
 
       const agentPrompt = `${JSON.stringify(searchRequest, null, 2)}
 
-IMPORTANT INSTRUCTIONS:
+CRITICAL INSTRUCTIONS - YOU MUST ALWAYS RETURN 3 PRODUCTS IN VALID JSON:
+
 1. Search the knowledge base for products matching the user's query: "${textPrompt.trim()}"
-2. Return EXACTLY top 3 products in this JSON format:
+   - **ONLY return products that EXIST in the knowledge base**
+   - DO NOT make up product names, DO NOT hallucinate products
+   - VERIFY each product name exists before including it in results
+   - **IMPORTANT**: Consider if the search query is even related to fashion/shoes/bags/accessories
+     * If user searches for food, animals, abstract concepts → score should be 5-15% (completely unrelated)
+
+2. **ALWAYS RETURN RESULTS**: Even if no perfect matches exist, return the 3 CLOSEST products:
+   - If perfect match (meets ALL criteria) → high score (80-100)
+   - If close match (meets MOST criteria, minor differences) → medium score (50-79)
+   - If partial match (meets SOME criteria, e.g., right type but wrong color) → low score (25-49)
+   - If poor match (barely relevant, e.g., completely wrong color) → very low score (10-24)
+   - If completely unrelated (search has NO connection to products) → extremely low score (5-15)
+   - NEVER return empty results array - always find the closest 3 products
+   - Example: Search "green shoe" but only brown shoes exist → brown shoes get 10-20% (wrong color)
+   - Example: Search "shoes under $20" but cheapest is $50 → those shoes get 15-25% (wrong price range)
+   - Example: Search "pancake" (food) when catalog only has shoes/bags → products get 5-10% (completely unrelated)
+   - BE BRUTALLY HONEST with scores - if search has NO relation to product type, score should be 5-15%
+
+3. Return EXACTLY top 3 products in this JSON format (NO text before or after):
 
 {
   "results": [
     {
-      "productName": "Product Name (Color Variant)",
+      "productName": "Miyabell (Other Brown)",
       "score": 85,
       "reasoning": "This matches your search for '${textPrompt.trim()}' because [explain specific connections - mention the product type, how it relates to their query]",
       "pros": ["Specific benefit 1", "Specific benefit 2", "Specific benefit 3"],
       "cons": ["Honest difference 1", "Honest difference 2"]
+    },
+    {
+      "productName": "Samuel (Dark Green)",
+      "score": 75,
+      "reasoning": "...",
+      "pros": ["..."],
+      "cons": ["..."]
+    },
+    {
+      "productName": "Snakesa (Black Gold Multi)",
+      "score": 65,
+      "reasoning": "...",
+      "pros": ["..."],
+      "cons": ["..."]
     }
   ]
 }
 
-3. **CRITICAL**: productName MUST include the color variant in parentheses exactly as it appears in the knowledge base
-   - Example: "Samuel (Dark Green)" NOT "Samuel" or "Samuel Green"  
-   - Example: "Blyth (Brown)" NOT "Blyth" or "Brown Blyth"
-   - Check the knowledge base for the EXACT format including color in parentheses
+NOTICE: All productName values include (Color) - this is MANDATORY!
 
-4. In the "reasoning" field, ALWAYS start by referencing what they searched for and explain why this product matches it.
-5. Be specific about product attributes (color, material, style, type).`;
+4. **CRITICAL - EXACT PRODUCT NAMES REQUIRED (MOST IMPORTANT RULE)**:
+   - **EVERY productName MUST include (Color) in parentheses** - NO EXCEPTIONS
+   - productName MUST be EXACTLY as it appears in the knowledge base - DO NOT shorten or modify
+   - Example: "Samuel (Dark Green)" NOT "Samuel" or "Samuel Green" or "Samuel (Green)"
+   - Example: "Blyth (Brown)" NOT "Blyth" or "Brown Blyth" 
+   - Example: "Snakesa (Black Gold Multi)" NOT "Snakesa (Multi)" or "Snakesa"
+   - Example: "Miyabell (Other Brown)" NOT "Miyabell" or "Miyabell Brown"
+   - Example: "Miyabell (Print)" NOT "Miyabell" or "Miyabell Print"
+   - Use the COMPLETE color name in parentheses - if KB says "(Black Gold Multi)", use that EXACTLY
+   - **IF YOU CANNOT FIND THE EXACT COLOR VARIANT, SEARCH THE KNOWLEDGE BASE AGAIN**
+   - VERIFY the product WITH COLOR exists in the knowledge base before returning it
+   - NEVER return product names without (Color) in parentheses
+   - NEVER make up product names or abbreviate color variants
+
+5. In the "reasoning" field:
+   - ALWAYS start by referencing what they searched for
+   - If the match is poor/unrelated, be HONEST: "While '${textPrompt.trim()}' is not related to our catalog, this is the closest available product..."
+   - If the match is good, explain why this product matches their search
+
+6. Be specific about product attributes (color, material, style, type).
+7. **YOU MUST return 3 products** - never return empty results array, never return invalid JSON`;
 
       // Invoke Bedrock agent
       const response = await invokeAgent(agentPrompt, sessionId);
@@ -488,7 +588,7 @@ IMPORTANT INSTRUCTIONS:
               agentResults = parsed.results;
               console.log('✅ Agent results array:', agentResults);
             }
-          } else {
+      } else {
             console.warn('⚠️ No JSON found in agent response');
             console.log('📄 Full raw response:', response.text);
           }
@@ -656,7 +756,7 @@ IMPORTANT INSTRUCTIONS:
               color: '#999',
               whiteSpace: 'nowrap'
             }}>
-              Searching for
+              Search for
             </span>
             <div style={{
               position: 'relative',
@@ -979,7 +1079,8 @@ IMPORTANT INSTRUCTIONS:
                 marginBottom: '15px',
                 color: '#000',
                 fontFamily: 'Jost, sans-serif',
-                fontWeight: '500'
+                fontWeight: '500',
+                letterSpacing: '0.5px'
               }}>
                 Describe What You're Looking For
               </h3>
