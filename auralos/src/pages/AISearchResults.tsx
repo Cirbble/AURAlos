@@ -68,11 +68,11 @@ export default function AISearchResults() {
   }>>([]);
 
   const loadingMessages = [
-    "🔍 Analyzing your preferences...",
-    "✨ Matching with our catalog...",
-    "🎨 Finding perfect styles...",
-    "💡 Calculating best matches...",
-    "🎯 Almost there..."
+    "Analyzing your preferences...",
+    "Matching with our catalog...",
+    "Finding perfect styles...",
+    "Calculating best matches...",
+    "Almost there..."
   ];
 
   // Loading message rotation
@@ -495,45 +495,49 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
             <div style={{
               textAlign: 'center',
               marginBottom: '60px',
-              padding: '40px',
-              background: '#F9FAFB',
-              borderRadius: '8px'
+              padding: '50px 40px',
+              background: '#FFFFFF',
+              borderRadius: '0',
+              border: '1px solid #E0E0E0'
             }}>
               <h3 style={{
-                fontSize: '20px',
+                fontSize: '18px',
                 fontWeight: '500',
-                marginBottom: '16px',
-                fontFamily: 'Jost, sans-serif',
-                color: '#000'
+                marginBottom: '12px',
+                fontFamily: 'Helvetica Neue, Arial, sans-serif',
+                color: '#000',
+                textTransform: 'uppercase',
+                letterSpacing: '1px'
               }}>
-                Want more specific results?
+                Want More Specific Results?
               </h3>
               <p style={{
-                fontSize: '14px',
+                fontSize: '13px',
                 color: '#666',
-                marginBottom: '24px',
-                fontFamily: 'Jost, sans-serif'
+                marginBottom: '28px',
+                fontFamily: 'Helvetica Neue, Arial, sans-serif',
+                lineHeight: '1.6'
               }}>
                 Let our AI help you refine your search with a few quick questions
               </p>
               <button
                 onClick={handleRefineSearch}
                 style={{
-                  padding: '14px 32px',
-                  fontSize: '14px',
+                  padding: '14px 40px',
+                  fontSize: '12px',
                   color: '#fff',
-                  background: '#6366F1',
+                  background: '#000',
                   border: 'none',
-                  borderRadius: '4px',
+                  borderRadius: '0',
                   cursor: 'pointer',
                   fontWeight: '500',
-                  fontFamily: 'Jost, sans-serif',
+                  fontFamily: 'Helvetica Neue, Arial, sans-serif',
                   textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  transition: 'background 0.2s'
+                  letterSpacing: '1.5px',
+                  transition: 'background 0.3s ease'
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.background = '#4F46E5'}
-                onMouseLeave={(e) => e.currentTarget.style.background = '#6366F1'}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#333'}
+                onMouseLeave={(e) => e.currentTarget.style.background = '#000'}
               >
                 Refine Search
               </button>
@@ -545,46 +549,48 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
             <div style={{
               textAlign: 'center',
               marginBottom: '60px',
-              padding: '30px',
-              background: '#EEF2FF',
-              borderRadius: '8px',
-              border: '1px solid #C7D2FE'
+              padding: '35px',
+              background: '#F5F5F5',
+              borderRadius: '0',
+              border: '1px solid #E0E0E0'
             }}>
               <p style={{
-                fontSize: '14px',
-                color: '#4338CA',
-                marginBottom: '20px',
-                fontFamily: 'Jost, sans-serif'
+                fontSize: '13px',
+                color: '#333',
+                marginBottom: '24px',
+                fontFamily: 'Helvetica Neue, Arial, sans-serif',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
               }}>
-                Showing refined results based on your preferences
+                Showing Refined Results Based On Your Preferences
               </p>
               <div style={{
                 display: 'flex',
-                gap: '12px',
+                gap: '16px',
                 justifyContent: 'center',
                 alignItems: 'center'
               }}>
                 <button
                   onClick={handleRefineSearch}
                   style={{
-                    padding: '12px 28px',
-                    fontSize: '14px',
+                    padding: '12px 32px',
+                    fontSize: '12px',
                     color: '#fff',
-                    background: '#6366F1',
+                    background: '#000',
                     border: 'none',
-                    borderRadius: '4px',
+                    borderRadius: '0',
                     cursor: 'pointer',
-                    fontFamily: 'Jost, sans-serif',
+                    fontFamily: 'Helvetica Neue, Arial, sans-serif',
                     textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
+                    letterSpacing: '1.5px',
                     fontWeight: '500',
-                    transition: 'all 0.2s'
+                    transition: 'all 0.3s ease'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#4F46E5';
+                    e.currentTarget.style.background = '#333';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = '#6366F1';
+                    e.currentTarget.style.background = '#000';
                   }}
                 >
                   Refine Again
@@ -595,28 +601,29 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
                     setRefinementRound(0);
                   }}
                   style={{
-                    padding: '12px 28px',
-                    fontSize: '13px',
-                    color: '#4338CA',
+                    padding: '12px 32px',
+                    fontSize: '12px',
+                    color: '#000',
                     background: '#fff',
-                    border: '1px solid #C7D2FE',
-                    borderRadius: '4px',
+                    border: '1px solid #000',
+                    borderRadius: '0',
                     cursor: 'pointer',
-                    fontFamily: 'Jost, sans-serif',
+                    fontFamily: 'Helvetica Neue, Arial, sans-serif',
                     textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    transition: 'all 0.2s'
+                    letterSpacing: '1.5px',
+                    fontWeight: '500',
+                    transition: 'all 0.3s ease'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#4338CA';
+                    e.currentTarget.style.background = '#000';
                     e.currentTarget.style.color = '#fff';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = '#fff';
-                    e.currentTarget.style.color = '#4338CA';
+                    e.currentTarget.style.color = '#000';
                   }}
                 >
-                  View Original Results
+                  Show Original Results
                 </button>
               </div>
             </div>
@@ -626,27 +633,30 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
           {isRefining && (
             <div style={{
               marginBottom: '60px',
-              padding: '40px',
+              padding: '50px 40px',
               background: '#fff',
-              border: '2px solid #6366F1',
-              borderRadius: '8px'
+              border: '1px solid #000',
+              borderRadius: '0'
             }}>
               <h3 style={{
-                fontSize: '22px',
+                fontSize: '16px',
                 fontWeight: '500',
-                marginBottom: '12px',
-                fontFamily: 'Jost, sans-serif',
+                marginBottom: '8px',
+                fontFamily: 'Helvetica Neue, Arial, sans-serif',
                 color: '#000',
-                textAlign: 'center'
+                textAlign: 'center',
+                textTransform: 'uppercase',
+                letterSpacing: '2px'
               }}>
                 Refining Your Search
               </h3>
               <p style={{
-                fontSize: '14px',
+                textAlign: 'center',
+                fontSize: '12px',
                 color: '#666',
-                marginBottom: '30px',
-                fontFamily: 'Jost, sans-serif',
-                textAlign: 'center'
+                marginBottom: '40px',
+                fontFamily: 'Helvetica Neue, Arial, sans-serif',
+                lineHeight: '1.6'
               }}>
                 Choose how you'd like to refine your results
               </p>
@@ -655,30 +665,36 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
               {refinementMode === 'guided' && !isLoadingQuestion && (
                 <div style={{ maxWidth: '900px', margin: '0 auto' }}>
                   <div style={{
-                    fontSize: '18px',
-                    fontWeight: '600',
+                    fontSize: '14px',
+                    fontWeight: '500',
                     color: '#000',
-                    marginBottom: '24px',
-                    fontFamily: 'Jost, sans-serif',
-                    textAlign: 'center'
+                    marginBottom: '32px',
+                    fontFamily: 'Helvetica Neue, Arial, sans-serif',
+                    textAlign: 'center',
+                    textTransform: 'uppercase',
+                    letterSpacing: '1.5px',
+                    paddingBottom: '16px',
+                    borderBottom: '1px solid #E0E0E0'
                   }}>
-                    📊 Rate Your Satisfaction
+                    Rate Your Satisfaction
                   </div>
 
                   {LIKERT_QUESTION_BANK.map((q, index) => (
                     <div key={index} style={{
-                      marginBottom: '32px',
-                      padding: '24px',
-                      background: '#F9FAFB',
-                      borderRadius: '8px',
-                      border: likertResponses[index] ? '2px solid #6366F1' : '2px solid #E5E7EB'
+                      marginBottom: '28px',
+                      padding: '28px 24px',
+                      background: '#FFFFFF',
+                      borderRadius: '0',
+                      border: likertResponses[index] ? '2px solid #000' : '1px solid #E0E0E0',
+                      transition: 'border 0.2s ease'
                     }}>
                       <div style={{
-                        fontSize: '15px',
+                        fontSize: '14px',
                         fontWeight: '500',
-                        marginBottom: '16px',
-                        fontFamily: 'Jost, sans-serif',
-                        color: '#374151'
+                        marginBottom: '20px',
+                        fontFamily: 'Helvetica Neue, Arial, sans-serif',
+                        color: '#000',
+                        letterSpacing: '0.3px'
                       }}>
                         {index + 1}. {q.question}
                       </div>
@@ -688,7 +704,7 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
                         display: 'grid',
                         gridTemplateColumns: 'repeat(7, 1fr)',
                         gap: '8px',
-                        marginBottom: '12px'
+                        marginBottom: '16px'
                       }}>
                         {[
                           'Not Satisfied At All',
@@ -700,12 +716,14 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
                           'Very Satisfied'
                         ].map((label, idx) => (
                           <div key={idx} style={{
-                            fontSize: '11px',
-                            color: '#6B7280',
+                            fontSize: '10px',
+                            color: '#666',
                             textAlign: 'center',
-                            fontFamily: 'Jost, sans-serif',
-                            fontWeight: '500',
-                            lineHeight: '1.3'
+                            fontFamily: 'Helvetica Neue, Arial, sans-serif',
+                            fontWeight: '400',
+                            lineHeight: '1.3',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.3px'
                           }}>
                             {label}
                           </div>
@@ -742,12 +760,12 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
                                 style={{
                                   width: '40px',
                                   height: '40px',
-                                  borderRadius: '50%',
-                                  border: isSelected ? '3px solid #6366F1' : '2px solid #D1D5DB',
-                                  background: isSelected ? '#6366F1' : '#fff',
-                                  color: isSelected ? '#fff' : '#374151',
+                                  borderRadius: '0',
+                                  border: isSelected ? '2px solid #000' : '1px solid #CCC',
+                                  background: isSelected ? '#000' : '#fff',
+                                  color: isSelected ? '#fff' : '#000',
                                   cursor: 'pointer',
-                                  transition: 'all 0.2s',
+                                  transition: 'all 0.2s ease',
                                   display: 'flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
@@ -796,28 +814,28 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
                   <div style={{
                     marginTop: '40px',
                     marginBottom: '32px',
-                    padding: '24px',
-                    background: '#FFF7ED',
-                    borderRadius: '8px',
-                    border: '2px solid #FED7AA'
+                    padding: '28px 24px',
+                    background: '#F5F5F5',
+                    borderRadius: '0',
+                    border: '1px solid #E0E0E0'
                   }}>
                     <div style={{
-                      fontSize: '18px',
-                      fontWeight: '600',
+                      fontSize: '14px',
+                      fontWeight: '500',
                       color: '#000',
-                      marginBottom: '12px',
-                      fontFamily: 'Jost, sans-serif',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px'
+                      marginBottom: '8px',
+                      fontFamily: 'Helvetica Neue, Arial, sans-serif',
+                      textTransform: 'uppercase',
+                      letterSpacing: '1.5px'
                     }}>
-                      💬 Additional Feedback
+                      Additional Feedback
                     </div>
                     <div style={{
-                      fontSize: '14px',
-                      color: '#92400E',
+                      fontSize: '12px',
+                      color: '#666',
                       marginBottom: '16px',
-                      fontFamily: 'Jost, sans-serif'
+                      fontFamily: 'Helvetica Neue, Arial, sans-serif',
+                      lineHeight: '1.5'
                     }}>
                       Tell us more about what you're looking for (color, style, occasion, etc.)
                     </div>
@@ -829,15 +847,16 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
                         width: '100%',
                         minHeight: '100px',
                         padding: '12px',
-                        fontSize: '14px',
-                        fontFamily: 'Jost, sans-serif',
-                        border: '2px solid #FED7AA',
-                        borderRadius: '4px',
+                        fontSize: '13px',
+                        fontFamily: 'Helvetica Neue, Arial, sans-serif',
+                        border: '1px solid #CCC',
+                        borderRadius: '0',
                         resize: 'vertical',
-                        outline: 'none'
+                        outline: 'none',
+                        background: '#FFFFFF'
                       }}
-                      onFocus={(e) => e.target.style.borderColor = '#FB923C'}
-                      onBlur={(e) => e.target.style.borderColor = '#FED7AA'}
+                      onFocus={(e) => e.target.style.borderColor = '#000'}
+                      onBlur={(e) => e.target.style.borderColor = '#CCC'}
                     />
                   </div>
 
@@ -847,39 +866,41 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
                       onClick={handleSubmitRefinement}
                       disabled={likertResponses.length !== LIKERT_QUESTION_BANK.length}
                       style={{
-                        padding: '16px 48px',
-                        fontSize: '16px',
+                        padding: '14px 48px',
+                        fontSize: '12px',
                         color: '#fff',
-                        background: likertResponses.length === LIKERT_QUESTION_BANK.length ? '#6366F1' : '#9CA3AF',
+                        background: likertResponses.length === LIKERT_QUESTION_BANK.length ? '#000' : '#999',
                         border: 'none',
-                        borderRadius: '4px',
+                        borderRadius: '0',
                         cursor: likertResponses.length === LIKERT_QUESTION_BANK.length ? 'pointer' : 'not-allowed',
-                        fontWeight: '600',
-                        fontFamily: 'Jost, sans-serif',
+                        fontWeight: '500',
+                        fontFamily: 'Helvetica Neue, Arial, sans-serif',
                         textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
-                        transition: 'all 0.2s'
+                        letterSpacing: '1.5px',
+                        transition: 'all 0.3s ease'
                       }}
                       onMouseEnter={(e) => {
                         if (likertResponses.length === LIKERT_QUESTION_BANK.length) {
-                          e.currentTarget.style.background = '#4F46E5';
+                          e.currentTarget.style.background = '#333';
                         }
                       }}
                       onMouseLeave={(e) => {
                         if (likertResponses.length === LIKERT_QUESTION_BANK.length) {
-                          e.currentTarget.style.background = '#6366F1';
+                          e.currentTarget.style.background = '#000';
                         }
                       }}
                     >
                       Get Refined Results
                     </button>
                     <div style={{
-                      marginTop: '12px',
-                      fontSize: '13px',
+                      marginTop: '16px',
+                      fontSize: '11px',
                       color: '#666',
-                      fontFamily: 'Jost, sans-serif'
+                      fontFamily: 'Helvetica Neue, Arial, sans-serif',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px'
                     }}>
-                      {likertResponses.length}/{LIKERT_QUESTION_BANK.length} questions answered
+                      {likertResponses.length}/{LIKERT_QUESTION_BANK.length} Questions Answered
                     </div>
                   </div>
                 </div>
@@ -889,34 +910,41 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
               {refinementMode === 'guided' && isLoadingQuestion ? (
                 <div style={{
                   textAlign: 'center',
-                  padding: '40px',
-                  color: '#666',
-                  fontFamily: 'Jost, sans-serif'
+                  padding: '60px 40px',
+                  color: '#333',
+                  fontFamily: 'Helvetica Neue, Arial, sans-serif',
+                  background: '#FFFFFF',
+                  border: '1px solid #E0E0E0'
                 }}>
                   <div style={{ 
-                    fontSize: '16px', 
-                    marginBottom: '12px',
+                    fontSize: '13px',
+                    marginBottom: '16px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '10px'
+                    gap: '12px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '1px',
+                    fontWeight: '500'
                   }}>
                     <span style={{
-                      width: '16px',
-                      height: '16px',
+                      width: '18px',
+                      height: '18px',
                       border: '2px solid #E5E5E5',
-                      borderTop: '2px solid #6366F1',
+                      borderTop: '2px solid #000',
                       borderRadius: '50%',
                       animation: 'spin 1s linear infinite'
                     }} />
                     {loadingMessages[loadingMessage]}
                   </div>
                   <div style={{
-                    fontSize: '14px',
+                    fontSize: '11px',
                     color: '#999',
-                    marginTop: '8px'
+                    marginTop: '8px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
                   }}>
-                    Processing your preferences and chat history...
+                    Processing Your Preferences
                   </div>
                 </div>
               ) : null}
@@ -924,7 +952,7 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
 
               {/* Cancel Refinement Button */}
               {refinementMode === 'guided' && !isLoadingQuestion && (
-                <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                <div style={{ textAlign: 'center', marginTop: '24px' }}>
                   <button
                     onClick={() => {
                       setIsRefining(false);
@@ -933,16 +961,25 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
                       setUserFeedback('');
                     }}
                     style={{
-                      padding: '10px 24px',
-                      fontSize: '13px',
+                      padding: '10px 28px',
+                      fontSize: '11px',
                       color: '#666',
                       background: 'transparent',
-                      border: '1px solid #E5E7EB',
-                      borderRadius: '4px',
+                      border: '1px solid #CCC',
+                      borderRadius: '0',
                       cursor: 'pointer',
-                      fontFamily: 'Jost, sans-serif',
+                      fontFamily: 'Helvetica Neue, Arial, sans-serif',
                       textTransform: 'uppercase',
-                      letterSpacing: '0.5px'
+                      letterSpacing: '1px',
+                      transition: 'all 0.3s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = '#000';
+                      e.currentTarget.style.color = '#000';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = '#CCC';
+                      e.currentTarget.style.color = '#666';
                     }}
                   >
                     Cancel
