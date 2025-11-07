@@ -39,7 +39,7 @@ interface AgentProductResult {
   [key: string]: any; // Allow any other fields
 }
 
-type Stage = 'input' | 'conversation';
+type Stage = 'input' | 'image_review' | 'conversation';
 
 interface SearchResult {
   product: Product;
@@ -65,6 +65,8 @@ export default function AICollection() {
   const [userInput, setUserInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isFocused, setIsFocused] = useState(false);
+  const [imageSpecifications, setImageSpecifications] = useState('');
+  const [bdaMetadata, setBdaMetadata] = useState<BDAImageMetadata | null>(null);
 
   const placeholders = [
     "black leather combat boots with lug soles for winter",
@@ -168,67 +170,64 @@ export default function AICollection() {
 
     setSelectedFile(file);
 
-    // Create preview
+    // Create preview and IMMEDIATELY transition to review page
     const preview = await fileToBase64(file);
     setSelectedImage(preview);
+    setStage('image_review'); // Instant transition!
 
+    // Background processing - upload and analyze
+    (async () => {
+      try {
+        // Step 1: Upload to S3
+        const uploadResult = await uploadImageToS3(file);
+        if (!uploadResult.success) {
+          throw new Error(uploadResult.error || 'Failed to upload image');
+        }
+
+        const s3Key = uploadResult.s3Key;
+        setImageS3Key(s3Key);
+
+        // Step 2: Analyze with BDA
+        const bdaResult = await analyzeImageWithBDA(s3Key);
+
+        if (!bdaResult.success || !bdaResult.metadata) {
+          throw new Error(bdaResult.error || 'Failed to analyze image');
+        }
+
+        const metadata = bdaResult.metadata;
+
+        // Store metadata
+        window.__bdaMetadata = metadata;
+        setBdaMetadata(metadata);
+
+      } catch (err) {
+        console.error('❌ Error analyzing image:', err);
+        setError(err instanceof Error ? err.message : 'Background analysis failed. You can still search.');
+      }
+    })();
+  };
+
+  const handleImageSearch = async () => {
     setIsLoading(true);
-    setStage('conversation');
 
     try {
-      // Step 1: Upload to S3
-      const uploadResult = await uploadImageToS3(file);
-      if (!uploadResult.success) {
-        throw new Error(uploadResult.error || 'Failed to upload image');
+      // Wait for BDA metadata if not ready yet
+      let metadata = bdaMetadata;
+      if (!metadata) {
+        console.log('⏳ Waiting for image analysis to complete...');
+        // Wait up to 30 seconds for metadata
+        for (let i = 0; i < 60; i++) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          if (bdaMetadata) {
+            metadata = bdaMetadata;
+            break;
+          }
+        }
+        
+        if (!metadata) {
+          throw new Error('Image analysis timed out. Please try again.');
+        }
       }
-
-      const s3Key = uploadResult.s3Key;
-      setImageS3Key(s3Key);
-
-      // Show initial message
-      const initialMsg: AgentMessage = {
-        role: 'agent',
-        content: '✓ Image uploaded! Analyzing with AI... This may take 10-20 seconds.',
-        timestamp: Date.now()
-      };
-      setMessages([initialMsg]);
-
-      // Step 2: Analyze with BDA
-      const bdaResult = await analyzeImageWithBDA(s3Key);
-
-      if (!bdaResult.success || !bdaResult.metadata) {
-        throw new Error(bdaResult.error || 'Failed to analyze image');
-      }
-
-      const metadata = bdaResult.metadata;
-
-      // Store metadata globally
-      window.__bdaMetadata = metadata;
-
-      // Show analysis to user
-      const descriptionParts = [];
-      if (metadata.name) {
-        descriptionParts.push(`**${metadata.name}**`);
-      } else if (metadata.product_type) {
-        descriptionParts.push(`a ${metadata.product_type}`);
-      }
-      if (metadata.primary_color) {
-        descriptionParts.push(`in ${metadata.primary_color}`);
-      }
-      if (metadata.material) {
-        descriptionParts.push(`made of ${metadata.material}`);
-      }
-
-      const descriptionText = descriptionParts.length > 0
-        ? descriptionParts.join(' ')
-        : 'your uploaded image';
-
-      const analysisMessage: AgentMessage = {
-        role: 'agent',
-        content: `✓ I analyzed your image: ${descriptionText}!\n\nSearching for matching products...`,
-        timestamp: Date.now()
-      };
-      setMessages([analysisMessage]);
 
       // Step 3: AUTONOMOUS MODE - Invoke agent with userIntent: "auto_match"
       // Format request for autonomous product matching
@@ -248,7 +247,7 @@ CRITICAL INSTRUCTIONS - YOU MUST ALWAYS RETURN 3 PRODUCTS IN VALID JSON:
 
 1. The user uploaded an image showing: ${descriptionForPrompt}
    - Product category from image: ${metadata.product_category || 'unknown'}
-   - Product type from image: ${metadata.product_type || 'unknown'}
+   - Product type from image: ${metadata.product_type || 'unknown'}${imageSpecifications ? `\n   - **USER'S ADDITIONAL SPECIFICATIONS**: "${imageSpecifications}"\n   - PRIORITIZE the user's specifications (e.g., if they say "but in black", find black versions)` : ''}
    - **ONLY return products that EXIST in the knowledge base**
    - DO NOT make up product names, DO NOT hallucinate products
    - VERIFY each product name exists before including it in results
@@ -384,44 +383,59 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
       }
 
       // Step 5: Map to SearchResult format and display
+      let results: SearchResult[] = [];
+      
       if (agentResults.length > 0) {
-        const results: SearchResult[] = agentResults.map((result, index) => {
-          console.log(`Processing image result ${index}:`, result);
-          
-          const productName = result.productName || result.name || result.product_name || result.productId;
-          
-          if (!productName) {
-            throw new Error(`Result ${index} has no product name`);
-          }
+        // Try to map agent results
+        results = agentResults
+          .map((result, index) => {
+            console.log(`Processing image result ${index}:`, result);
+            
+            const productName = result.productName || result.name || result.product_name || result.productId;
+            
+            if (!productName) {
+              console.error(`Result ${index} has no product name`);
+              return null;
+            }
 
-          const product = findBestProductMatch(productName);
+            const product = findBestProductMatch(productName);
 
-          if (!product) {
-            console.error(`❌ NO MATCH FOUND - Agent returned: "${productName}"`);
-            throw new Error(`Product "${productName}" not found in catalog. Agent must return products with exact color variants like "Product (Color)".`);
-          }
+            if (!product) {
+              console.error(`❌ NO MATCH FOUND - Agent returned: "${productName}"`);
+              return null;
+            }
 
-        return {
-          product,
-            matchScore: result.score || 0,
-            reasoning: result.reasoning || '',
-            pros: result.pros || [],
-            cons: result.cons || []
-        };
-      });
-
-        // Navigate to results page with data
-        navigate('/ai-search-results', { 
-          state: { 
-            searchResults: results,
-            query: 'Visual Search Results'
-          } 
-        });
-      } else {
-        // NO FALLBACKS - Agent must return results or we fail
-        console.error('❌ Agent returned empty results - REFUSING to show fallback products');
-        throw new Error('No matching products found. The agent did not return any results.');
+            return {
+              product,
+              matchScore: result.score || 0,
+              reasoning: result.reasoning || '',
+              pros: result.pros || [],
+              cons: result.cons || []
+            };
+          })
+          .filter((r): r is SearchResult => r !== null);
       }
+      
+      // FALLBACK: If agent returned no results or invalid products, show any 3 products with low scores
+      if (results.length === 0) {
+        console.warn('⚠️ No valid results from agent - using fallback products');
+        const fallbackProducts = products.slice(0, 3);
+        results = fallbackProducts.map(product => ({
+          product,
+          matchScore: 10,
+          reasoning: `This is a fallback result. ${imageSpecifications ? `Your specifications: "${imageSpecifications}".` : ''} Please try refining your search or uploading a different image.`,
+          pros: ['Available in our catalog'],
+          cons: ['May not match your search criteria']
+        }));
+      }
+
+      // Navigate to results page with data
+      navigate('/ai-search-results', { 
+        state: { 
+          searchResults: results,
+          query: 'Visual Search Results'
+        } 
+      });
 
       setIsLoading(false);
 
@@ -532,7 +546,7 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
    - **EVERY productName MUST include (Color) in parentheses** - NO EXCEPTIONS
    - productName MUST be EXACTLY as it appears in the knowledge base - DO NOT shorten or modify
    - Example: "Samuel (Dark Green)" NOT "Samuel" or "Samuel Green" or "Samuel (Green)"
-   - Example: "Blyth (Brown)" NOT "Blyth" or "Brown Blyth" 
+   - Example: "Blyth (Brown)" NOT "Blyth" or "Brown Blyth"
    - Example: "Snakesa (Black Gold Multi)" NOT "Snakesa (Multi)" or "Snakesa"
    - Example: "Miyabell (Other Brown)" NOT "Miyabell" or "Miyabell Brown"
    - Example: "Miyabell (Print)" NOT "Miyabell" or "Miyabell Print"
@@ -696,11 +710,13 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
     setMessages([]);
     setUserInput('');
     setError(null);
-    setIsLoading(false); // Make sure loading is cleared
+    setIsLoading(false);
+    setImageSpecifications('');
+    setBdaMetadata(null);
     const newSessionId = generateSessionId();
     console.log('🆕 New session ID:', newSessionId);
-    setSessionId(newSessionId); // Generate new session ID
-    window.__bdaMetadata = undefined; // Clear BDA metadata
+    setSessionId(newSessionId);
+    window.__bdaMetadata = undefined;
   };
 
 
@@ -1142,6 +1158,205 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
           </div>
         </div>
       </section>
+      )}
+
+      {/* Image Review Stage - Seamless page after upload */}
+      {stage === 'image_review' && (
+        <section style={{
+          padding: '60px 80px',
+          backgroundColor: '#fff',
+          minHeight: '70vh'
+        }}>
+          <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+            {/* Header */}
+            <h2 style={{
+              fontSize: '32px',
+              fontWeight: '500',
+              marginBottom: '10px',
+              fontFamily: 'Jost, sans-serif',
+              color: '#000'
+            }}>
+              Review Your Image
+            </h2>
+            <p style={{
+              fontSize: '16px',
+              color: '#666',
+              marginBottom: '50px',
+              fontFamily: 'Jost, sans-serif'
+            }}>
+              {!bdaMetadata ? (
+                <span style={{ color: '#999' }}>🔍 Analyzing image in background... You can add specifications below.</span>
+              ) : (
+                'Add any specifications or details to refine your search'
+              )}
+            </p>
+
+            {/* Main Layout: Image + Input */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '60px',
+              alignItems: 'start'
+            }}>
+              {/* Left: Image Preview */}
+              <div style={{
+                border: '1px solid #E5E5E5',
+                padding: '30px',
+                backgroundColor: '#fafafa',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                minHeight: '400px'
+              }}>
+                {selectedImage && (
+                  <img
+                    src={selectedImage}
+                    alt="Your uploaded image"
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: '500px',
+                      height: 'auto',
+                      objectFit: 'contain'
+                    }}
+                  />
+                )}
+              </div>
+
+              {/* Right: Specifications Input */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '20px'
+              }}>
+                <div>
+                  <h3 style={{
+                    fontSize: '18px',
+                    fontWeight: '500',
+                    marginBottom: '12px',
+                    fontFamily: 'Jost, sans-serif',
+                    color: '#000',
+                    letterSpacing: '0.5px'
+                  }}>
+                    Add Specifications (Optional)
+                  </h3>
+                  <p style={{
+                    fontSize: '15px',
+                    color: '#666',
+                    marginBottom: '20px',
+                    fontFamily: 'Jost, sans-serif',
+                    lineHeight: '1.6'
+                  }}>
+                    Describe any specific details, color preferences, or style modifications you'd like to see
+                  </p>
+                </div>
+
+                <textarea
+                  value={imageSpecifications}
+                  onChange={(e) => setImageSpecifications(e.target.value)}
+                  placeholder='Examples:&#10;• "these, but in black"&#10;• "similar style with a higher heel"&#10;• "same look but more casual"&#10;• "without any embellishments"'
+                  disabled={isLoading}
+                  style={{
+                    width: '100%',
+                    minHeight: '180px',
+                    padding: '18px',
+                    fontSize: '15px',
+                    border: '1px solid #D1D5DB',
+                    fontFamily: 'Jost, sans-serif',
+                    outline: 'none',
+                    resize: 'vertical',
+                    lineHeight: '1.6',
+                    transition: 'border-color 0.2s'
+                  }}
+                  onFocus={(e) => e.currentTarget.style.borderColor = '#000'}
+                  onBlur={(e) => e.currentTarget.style.borderColor = '#D1D5DB'}
+                />
+
+                <div style={{
+                  display: 'flex',
+                  gap: '15px',
+                  marginTop: '20px'
+                }}>
+                  <button
+                    onClick={() => {
+                      setStage('input');
+                      setSelectedImage(null);
+                      setSelectedFile(null);
+                      setImageSpecifications('');
+                      setBdaMetadata(null);
+                    }}
+                    disabled={isLoading}
+                    style={{
+                      flex: '0 0 auto',
+                      padding: '16px 32px',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#000',
+                      backgroundColor: '#fff',
+                      border: '1px solid #000',
+                      cursor: isLoading ? 'not-allowed' : 'pointer',
+                      letterSpacing: '1px',
+                      textTransform: 'uppercase',
+                      fontFamily: 'Jost, sans-serif',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isLoading) {
+                        e.currentTarget.style.backgroundColor = '#000';
+                        e.currentTarget.style.color = '#fff';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isLoading) {
+                        e.currentTarget.style.backgroundColor = '#fff';
+                        e.currentTarget.style.color = '#000';
+                      }
+                    }}
+                  >
+                    Back
+                  </button>
+
+                  <button
+                    onClick={handleImageSearch}
+                    disabled={isLoading}
+                    style={{
+                      flex: 1,
+                      padding: '16px',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#fff',
+                      backgroundColor: isLoading ? '#999' : '#000',
+                      border: 'none',
+                      cursor: isLoading ? 'not-allowed' : 'pointer',
+                      letterSpacing: '1px',
+                      textTransform: 'uppercase',
+                      fontFamily: 'Jost, sans-serif',
+                      transition: 'background-color 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isLoading) e.currentTarget.style.backgroundColor = '#333';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isLoading) e.currentTarget.style.backgroundColor = '#000';
+                    }}
+                  >
+                    {isLoading ? (bdaMetadata ? 'Searching...' : 'Analyzing & Searching...') : 'Find Products'}
+                  </button>
+                </div>
+
+                {error && (
+                  <p style={{
+                    fontSize: '14px',
+                    color: '#ef4444',
+                    fontFamily: 'Jost, sans-serif',
+                    marginTop: '10px'
+                  }}>
+                    {error}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
       )}
 
       {/* Conversation Stage */}
