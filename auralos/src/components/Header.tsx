@@ -266,4 +266,3 @@ const secondaryNavStyle = {
   transition: 'color 0.2s',
   whiteSpace: 'nowrap' as const
 };
-
