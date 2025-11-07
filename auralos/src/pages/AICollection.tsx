@@ -237,24 +237,36 @@ export default function AICollection() {
         formattedMetadata: formatBDAMetadataForAgent(metadata)
       };
 
-      const descriptionForPrompt = metadata.product_type ? 
-        `${metadata.primary_color || ''} ${metadata.material || ''} ${metadata.product_type}`.trim() : 
-        'the uploaded image';
+      // Build comprehensive description from metadata
+      const descriptionParts = [];
+      if (metadata.description) descriptionParts.push(metadata.description);
+      if (metadata.primary_color) descriptionParts.push(`Color: ${metadata.primary_color}`);
+      if (metadata.secondary_colors?.length) descriptionParts.push(`Additional colors: ${metadata.secondary_colors.join(', ')}`);
+      if (metadata.material) descriptionParts.push(`Material: ${metadata.material}`);
+      if (metadata.style) descriptionParts.push(`Style: ${metadata.style}`);
+      if (metadata.product_type) descriptionParts.push(`Type: ${metadata.product_type}`);
+      
+      const fullDescription = descriptionParts.length > 0 
+        ? descriptionParts.join('. ') 
+        : 'the uploaded image';
 
       const agentPrompt = `${JSON.stringify(autonomousRequest, null, 2)}
 
 CRITICAL INSTRUCTIONS - YOU MUST ALWAYS RETURN 3 PRODUCTS IN VALID JSON:
 
-1. The user uploaded an image showing: ${descriptionForPrompt}
-   - Product category from image: ${metadata.product_category || 'unknown'}
-   - Product type from image: ${metadata.product_type || 'unknown'}${imageSpecifications ? `\n   - **USER'S ADDITIONAL SPECIFICATIONS**: "${imageSpecifications}"\n   - PRIORITIZE the user's specifications (e.g., if they say "but in black", find black versions)` : ''}
+1. **USE ONLY THE TEXT DESCRIPTION BELOW** - Do not reference or use the actual image:
+   
+   IMAGE DESCRIPTION: "${fullDescription}"
+   
+   - Product category: ${metadata.product_category || 'unknown'}
+   - Product type: ${metadata.product_type || 'unknown'}${imageSpecifications ? `\n   - **USER'S ADDITIONAL SPECIFICATIONS**: "${imageSpecifications}"\n   - PRIORITIZE the user's specifications (e.g., if they say "but in black", find black versions)` : ''}
    - **ONLY return products that EXIST in the knowledge base**
    - DO NOT make up product names, DO NOT hallucinate products
    - VERIFY each product name exists before including it in results
-   - **IMPORTANT**: Consider if the uploaded item is even related to fashion/shoes/bags/accessories
-     * If user uploads food, animals, abstract objects → score should be 5-15% (completely unrelated)
+   - **IMPORTANT**: Consider if the described item is even related to fashion/shoes/bags/accessories
+     * If description mentions food, animals, abstract objects → score should be 5-15% (completely unrelated)
 
-2. Search the knowledge base (ALDO shoes, bags, accessories only)
+2. Search the knowledge base using ONLY the text description above (ALDO shoes, bags, accessories only)
 
 3. **PRIORITY MATCHING RULES (CRITICAL)**:
    - IF user uploaded SHOES/BOOTS → Find ONLY shoes/boots (same category)
@@ -290,7 +302,7 @@ CRITICAL INSTRUCTIONS - YOU MUST ALWAYS RETURN 3 PRODUCTS IN VALID JSON:
     {
       "productName": "Miyabell (Other Brown)",
       "score": 85,
-      "reasoning": "This [bag/shoe/accessory] matches your uploaded ${metadata.product_type || 'item'} because [explain how it's similar or complementary]",
+      "reasoning": "This [bag/shoe/accessory] matches the description provided because [explain how it's similar or complementary based on the text description]",
       "pros": ["Matches the color palette", "Same product category", "Similar style"],
       "cons": ["Slightly different shade", "Different specific style"]
     },
@@ -314,9 +326,9 @@ CRITICAL INSTRUCTIONS - YOU MUST ALWAYS RETURN 3 PRODUCTS IN VALID JSON:
 NOTICE: All productName values include (Color) - this is MANDATORY!
 
 8. In the "reasoning" field:
-   - ALWAYS reference what the user uploaded
-   - If the match is poor/unrelated, be HONEST: "While the uploaded item is not related to our catalog, this is the closest available product..."
-   - If the match is good, explain why this product matches the uploaded image
+   - ALWAYS reference the description provided (not the image itself)
+   - If the match is poor/unrelated, be HONEST: "While the described item is not related to our catalog, this is the closest available product..."
+   - If the match is good, explain why this product matches the description provided
 
 9. **CRITICAL - EXACT PRODUCT NAMES REQUIRED (MOST IMPORTANT RULE)**:
    - **EVERY productName MUST include (Color) in parentheses** - NO EXCEPTIONS
@@ -423,7 +435,7 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
         results = fallbackProducts.map(product => ({
           product,
           matchScore: 10,
-          reasoning: `This is a fallback result. ${imageSpecifications ? `Your specifications: "${imageSpecifications}".` : ''} Please try refining your search or uploading a different image.`,
+          reasoning: `This is a fallback result based on the image description. ${imageSpecifications ? `Your specifications: "${imageSpecifications}".` : ''} Please try refining your search or providing more details.`,
           pros: ['Available in our catalog'],
           cons: ['May not match your search criteria']
         }));
@@ -444,7 +456,7 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
 
       const fallbackMessage: AgentMessage = {
         role: 'agent',
-        content: `✓ Image uploaded and analyzed. I encountered an issue finding matches. Would you like to describe what you're looking for?`,
+        content: `✓ Image analyzed and description extracted. I encountered an issue finding matches based on the description. Would you like to provide more details?`,
           timestamp: Date.now()
         };
       setMessages([fallbackMessage]);
@@ -847,7 +859,7 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
             fontWeight: '400',
             fontFamily: 'Jost, sans-serif'
           }}>
-            Upload an image and discover products that match your style. Our AI helps you find exactly what you're looking for.
+            Upload an image and our AI will analyze it to find products that match. We use the image description to find the 3 closest matches in our catalog.
           </p>
 
           {/* Search Button for Text-Only Search */}
