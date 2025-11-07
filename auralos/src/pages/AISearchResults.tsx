@@ -32,12 +32,15 @@ export default function AISearchResults() {
 
   // Refinement state
   const [isRefining, setIsRefining] = useState(false);
+  const [refinementMode, setRefinementMode] = useState<'guided' | 'direct' | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState<RefinementQuestion | null>(null);
   const [refinementAnswers, setRefinementAnswers] = useState<RefinementAnswer[]>([]);
   const [isLoadingQuestion, setIsLoadingQuestion] = useState(false);
   const [sessionId] = useState(() => generateSessionId());
   const [refinedResults, setRefinedResults] = useState<SearchResult[] | null>(null);
   const [openEndedAnswer, setOpenEndedAnswer] = useState('');
+  const [refinementRound, setRefinementRound] = useState(0);
+  const [directRefinementInput, setDirectRefinementInput] = useState('');
 
   useEffect(() => {
     // Redirect to find-your-fit if no results
@@ -95,41 +98,100 @@ export default function AISearchResults() {
     return undefined;
   };
 
-  const handleRefineSearch = async () => {
+  const handleRefineSearch = () => {
     setIsRefining(true);
+    setRefinementMode(null); // Show mode selection
+    setRefinementRound(refinedResults ? refinementRound + 1 : 1);
+  };
+
+  const handleSelectGuidedMode = async () => {
+    setRefinementMode('guided');
+    setRefinementAnswers([]); // Reset answers for new guided session
+    await getNextGuidedQuestion();
+  };
+
+  const getNextGuidedQuestion = async () => {
     setIsLoadingQuestion(true);
 
     try {
-      // Ask AI for the first refinement question
-      const prompt = `The user is looking for products based on this query: "${query}". 
-They want to refine their search to get more specific results.
+      const questionNumber = refinementAnswers.length + 1;
+      let prompt;
+      
+      if (questionNumber === 1) {
+        // First question: Likert about price or satisfaction
+        prompt = `The user is looking for products based on this query: "${query}". 
+${refinedResults ? 'They have already seen some refined results and want to refine further.' : 'They want to refine their search to get more specific results.'}
 
-Ask them about ONE specific metric/preference that would help narrow down the search. 
-Determine if this should be a Likert scale question (for rating importance/preference) or an open-ended question (for specific details like color, style, occasion).
+Ask them a Likert scale question about EITHER:
+- Price range/budget importance
+- Their satisfaction with current results (if they've seen refined results)
+- Value for money importance
 
-Examples of Likert questions: "How important is comfort?", "How formal should the style be?"
-Examples of open-ended questions: "What color are you looking for?", "What occasion will you wear this for?"
+This MUST be a Likert scale question (type: "likert").
 
-Respond ONLY with a JSON object in this format:
+Respond ONLY with a JSON object:
 {
   "metric": "short_metric_name",
-  "question": "Your question here",
-  "type": "likert" or "open"
-}
-
-Example Likert:
-{
-  "metric": "comfort_level",
-  "question": "How important is comfort to you?",
+  "question": "Your Likert question here",
   "type": "likert"
 }
 
-Example Open:
+Example:
+{
+  "metric": "price_importance",
+  "question": "How important is staying within a specific budget?",
+  "type": "likert"
+}`;
+      } else if (questionNumber === 2) {
+        // Second question: Another Likert about style/comfort/formality
+        prompt = `The user is refining their search for: "${query}".
+
+Their first preference was: ${refinementAnswers[0].metric} - ${refinementAnswers[0].label}
+
+Ask them a DIFFERENT Likert scale question about:
+- Comfort level importance
+- Formality/casualness preference
+- Style boldness vs. classic
+- Versatility importance
+
+This MUST be a Likert scale question (type: "likert") and DIFFERENT from the first question.
+
+Respond ONLY with a JSON object:
+{
+  "metric": "short_metric_name",
+  "question": "Your Likert question here",
+  "type": "likert"
+}`;
+      } else {
+        // Third question: Open-ended about specifics
+        prompt = `The user is refining their search for: "${query}".
+
+Their preferences so far:
+1. ${refinementAnswers[0].metric}: ${refinementAnswers[0].label}
+2. ${refinementAnswers[1].metric}: ${refinementAnswers[1].label}
+
+Ask them an open-ended question about specific details like:
+- Color preference
+- Occasion/use case
+- Material preference
+- Specific style details
+
+This MUST be an open-ended question (type: "open").
+
+Respond ONLY with a JSON object:
+{
+  "metric": "short_metric_name",
+  "question": "Your open-ended question here",
+  "type": "open"
+}
+
+Example:
 {
   "metric": "color_preference",
   "question": "What color are you looking for?",
   "type": "open"
 }`;
+      }
 
       const response = await invokeAgent(prompt, sessionId);
       const parsed = JSON.parse(response.text.trim());
@@ -137,6 +199,92 @@ Example Open:
       setOpenEndedAnswer('');
     } catch (error) {
       console.error('Error getting refinement question:', error);
+    } finally {
+      setIsLoadingQuestion(false);
+    }
+  };
+
+  const handleDirectRefinement = async () => {
+    if (!directRefinementInput.trim()) return;
+    
+    setIsLoadingQuestion(true);
+
+    try {
+      const prompt = `Search for products matching this query: "${query}"
+
+User's direct refinement request: "${directRefinementInput}"
+
+${refinementAnswers.length > 0 ? `Previous refinement preferences:
+${refinementAnswers.map(a => `- ${a.metric}: ${a.label}`).join('\n')}` : ''}
+
+Return EXACTLY 3 products that best match the user's request in this JSON format:
+
+{
+  "results": [
+    {
+      "productName": "Product Name (Color Variant)",
+      "score": 85,
+      "reasoning": "This matches your request because...",
+      "pros": ["Benefit 1", "Benefit 2", "Benefit 3"],
+      "cons": ["Consideration 1", "Consideration 2"]
+    }
+  ]
+}
+
+CRITICAL: productName MUST include the color variant in parentheses exactly as it appears in the knowledge base.`;
+
+      const response = await invokeAgent(prompt, sessionId);
+      console.log('🤖 Direct refinement response:', response.text);
+      
+      const trimmed = response.text.trim();
+      let parsed;
+      
+      if (trimmed.startsWith('{')) {
+        parsed = JSON.parse(trimmed);
+      } else {
+        const firstBrace = trimmed.indexOf('{');
+        const lastBrace = trimmed.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace !== -1) {
+          const jsonStr = trimmed.substring(firstBrace, lastBrace + 1);
+          parsed = JSON.parse(jsonStr);
+        }
+      }
+
+      if (parsed && parsed.results && Array.isArray(parsed.results)) {
+        const results: SearchResult[] = parsed.results.map((result: any) => {
+          const productName = result.productName || result.name || result.product_name;
+          
+          if (!productName) {
+            throw new Error('Result has no product name');
+          }
+
+          const product = findBestProductMatch(productName);
+
+          if (!product) {
+            console.error(`❌ NO MATCH FOUND - Agent returned: "${productName}"`);
+            throw new Error(`Product "${productName}" not found in catalog.`);
+          }
+
+          return {
+            product,
+            matchScore: result.score || 0,
+            reasoning: result.reasoning || '',
+            pros: result.pros || [],
+            cons: result.cons || []
+          };
+        });
+
+        setRefinedResults(results);
+        setIsRefining(false);
+        setRefinementMode(null);
+        setCurrentQuestion(null);
+        setRefinementAnswers([]);
+        setOpenEndedAnswer('');
+        setDirectRefinementInput('');
+      }
+    } catch (error) {
+      console.error('Error getting direct refinement results:', error);
+      alert('Failed to get refined results. Please try again.');
     } finally {
       setIsLoadingQuestion(false);
     }
@@ -162,51 +310,16 @@ Example Open:
 
     const updatedAnswers = [...refinementAnswers, newAnswer];
     setRefinementAnswers(updatedAnswers);
-    setIsLoadingQuestion(true);
+    setCurrentQuestion(null);
     setOpenEndedAnswer('');
 
-    try {
-      // Ask AI if it needs more information or can provide results
-      const prompt = `The user is refining their search for: "${query}"
-
-Current refinement preferences:
-${updatedAnswers.map(a => `- ${a.metric}: ${a.label}`).join('\n')}
-
-Do you have enough information to provide 3 refined product recommendations, or do you need to ask about one more preference?
-
-Respond with JSON in ONE of these formats:
-
-If you need more info:
-{
-  "needsMore": true,
-  "metric": "metric_name",
-  "question": "Your question here",
-  "type": "likert" or "open"
-}
-
-If you have enough info:
-{
-  "needsMore": false,
-  "ready": true
-}`;
-
-      const response = await invokeAgent(prompt, sessionId);
-      const parsed = JSON.parse(response.text.trim());
-
-      if (parsed.needsMore) {
-        setCurrentQuestion({ 
-          metric: parsed.metric, 
-          question: parsed.question,
-          type: parsed.type || 'likert'
-        });
-      } else {
-        // Get refined results
-        await getRefinedResults(updatedAnswers);
-      }
-    } catch (error) {
-      console.error('Error processing refinement:', error);
-    } finally {
-      setIsLoadingQuestion(false);
+    // Check if we've asked all 3 questions
+    if (updatedAnswers.length >= 3) {
+      // All questions answered, get refined results
+      await getRefinedResults(updatedAnswers);
+    } else {
+      // Ask next question
+      await getNextGuidedQuestion();
     }
   };
 
@@ -216,8 +329,11 @@ If you have enough info:
     try {
       const prompt = `Search for products matching this query: "${query}"
 
-User refinement preferences:
-${answers.map(a => `- ${a.metric}: ${a.label} (${a.value}/5)`).join('\n')}
+User refinement preferences (from 3 questions):
+${answers.map((a, idx) => {
+  const valueStr = typeof a.value === 'number' ? ` (rating: ${a.value}/7)` : '';
+  return `${idx + 1}. ${a.metric.replace(/_/g, ' ')}: ${a.label}${valueStr}`;
+}).join('\n')}
 
 Return EXACTLY 3 products that best match these refined preferences in this JSON format:
 
@@ -280,6 +396,7 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
         setIsRefining(false);
         setCurrentQuestion(null);
         setRefinementAnswers([]);
+        setOpenEndedAnswer('');
       }
     } catch (error) {
       console.error('Error getting refined results:', error);
@@ -526,8 +643,8 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
             </div>
           )}
 
-          {/* Reset to Original Results */}
-          {refinedResults && (
+          {/* Refined Results Actions */}
+          {refinedResults && !isRefining && (
             <div style={{
               textAlign: 'center',
               marginBottom: '60px',
@@ -539,37 +656,72 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
               <p style={{
                 fontSize: '14px',
                 color: '#4338CA',
-                marginBottom: '16px',
+                marginBottom: '20px',
                 fontFamily: 'Jost, sans-serif'
               }}>
                 Showing refined results based on your preferences
               </p>
-              <button
-                onClick={() => setRefinedResults(null)}
-                style={{
-                  padding: '10px 24px',
-                  fontSize: '13px',
-                  color: '#4338CA',
-                  background: '#fff',
-                  border: '1px solid #C7D2FE',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontFamily: 'Jost, sans-serif',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#4338CA';
-                  e.currentTarget.style.color = '#fff';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#fff';
-                  e.currentTarget.style.color = '#4338CA';
-                }}
-              >
-                View Original Results
-              </button>
+              <div style={{
+                display: 'flex',
+                gap: '12px',
+                justifyContent: 'center',
+                alignItems: 'center'
+              }}>
+                <button
+                  onClick={handleRefineSearch}
+                  style={{
+                    padding: '12px 28px',
+                    fontSize: '14px',
+                    color: '#fff',
+                    background: '#6366F1',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontFamily: 'Jost, sans-serif',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    fontWeight: '500',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#4F46E5';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#6366F1';
+                  }}
+                >
+                  Refine Again
+                </button>
+                <button
+                  onClick={() => {
+                    setRefinedResults(null);
+                    setRefinementRound(0);
+                  }}
+                  style={{
+                    padding: '12px 28px',
+                    fontSize: '13px',
+                    color: '#4338CA',
+                    background: '#fff',
+                    border: '1px solid #C7D2FE',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontFamily: 'Jost, sans-serif',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#4338CA';
+                    e.currentTarget.style.color = '#fff';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#fff';
+                    e.currentTarget.style.color = '#4338CA';
+                  }}
+                >
+                  View Original Results
+                </button>
+              </div>
             </div>
           )}
 
@@ -585,16 +737,160 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
               <h3 style={{
                 fontSize: '22px',
                 fontWeight: '500',
-                marginBottom: '30px',
+                marginBottom: '12px',
                 fontFamily: 'Jost, sans-serif',
                 color: '#000',
                 textAlign: 'center'
               }}>
                 Refining Your Search
               </h3>
+              <p style={{
+                fontSize: '14px',
+                color: '#666',
+                marginBottom: '30px',
+                fontFamily: 'Jost, sans-serif',
+                textAlign: 'center'
+              }}>
+                Choose how you'd like to refine your results
+              </p>
+
+              {/* Mode Selection */}
+              {!refinementMode && !isLoadingQuestion ? (
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '20px',
+                  maxWidth: '800px',
+                  margin: '0 auto'
+                }}>
+                  {/* Guided Mode */}
+                  <button
+                    onClick={handleSelectGuidedMode}
+                    style={{
+                      padding: '30px',
+                      background: '#F9FAFB',
+                      border: '2px solid #E5E7EB',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      textAlign: 'left'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = '#6366F1';
+                      e.currentTarget.style.background = '#EEF2FF';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = '#E5E7EB';
+                      e.currentTarget.style.background = '#F9FAFB';
+                    }}
+                  >
+                    <div style={{
+                      fontSize: '18px',
+                      fontWeight: '500',
+                      color: '#000',
+                      marginBottom: '12px',
+                      fontFamily: 'Jost, sans-serif'
+                    }}>
+                      🤖 AI-Guided Questions
+                    </div>
+                    <div style={{
+                      fontSize: '14px',
+                      color: '#666',
+                      lineHeight: '1.6',
+                      fontFamily: 'Jost, sans-serif'
+                    }}>
+                      Let the AI ask you specific questions to understand your preferences better
+                    </div>
+                  </button>
+
+                  {/* Direct Mode */}
+                  <button
+                    onClick={() => setRefinementMode('direct')}
+                    style={{
+                      padding: '30px',
+                      background: '#F9FAFB',
+                      border: '2px solid #E5E7EB',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      textAlign: 'left'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = '#6366F1';
+                      e.currentTarget.style.background = '#EEF2FF';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = '#E5E7EB';
+                      e.currentTarget.style.background = '#F9FAFB';
+                    }}
+                  >
+                    <div style={{
+                      fontSize: '18px',
+                      fontWeight: '500',
+                      color: '#000',
+                      marginBottom: '12px',
+                      fontFamily: 'Jost, sans-serif'
+                    }}>
+                      ✍️ Tell Us Directly
+                    </div>
+                    <div style={{
+                      fontSize: '14px',
+                      color: '#666',
+                      lineHeight: '1.6',
+                      fontFamily: 'Jost, sans-serif'
+                    }}>
+                      Describe exactly what you're looking for in your own words
+                    </div>
+                  </button>
+                </div>
+              ) : null}
+
+              {/* Progress Indicator for Guided Mode */}
+              {refinementMode === 'guided' && (
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '12px',
+                  marginBottom: '30px'
+                }}>
+                  {[1, 2, 3].map((step) => (
+                    <div key={step} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <div style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '50%',
+                        background: refinementAnswers.length >= step ? '#6366F1' : '#E5E7EB',
+                        color: refinementAnswers.length >= step ? '#fff' : '#9CA3AF',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: '600',
+                        fontSize: '14px',
+                        fontFamily: 'Jost, sans-serif',
+                        transition: 'all 0.3s'
+                      }}>
+                        {refinementAnswers.length >= step ? '✓' : step}
+                      </div>
+                      {step < 3 && (
+                        <div style={{
+                          width: '40px',
+                          height: '2px',
+                          background: refinementAnswers.length >= step ? '#6366F1' : '#E5E7EB',
+                          transition: 'all 0.3s'
+                        }} />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Show previous answers */}
-              {refinementAnswers.length > 0 && (
+              {refinementAnswers.length > 0 && refinementMode === 'guided' && (
                 <div style={{
                   marginBottom: '30px',
                   padding: '20px',
@@ -630,8 +926,8 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
                 </div>
               )}
 
-              {/* Current Question */}
-              {isLoadingQuestion ? (
+              {/* Guided Mode - Loading */}
+              {refinementMode === 'guided' && isLoadingQuestion ? (
                 <div style={{
                   textAlign: 'center',
                   padding: '40px',
@@ -643,8 +939,23 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
                   </div>
                   <div style={{ fontSize: '24px' }}>🤔</div>
                 </div>
-              ) : currentQuestion ? (
+              ) : null}
+
+              {/* Guided Mode - Question */}
+              {refinementMode === 'guided' && currentQuestion && !isLoadingQuestion ? (
                 <div>
+                  <div style={{
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    color: '#6366F1',
+                    textTransform: 'uppercase',
+                    letterSpacing: '1px',
+                    marginBottom: '12px',
+                    fontFamily: 'Jost, sans-serif',
+                    textAlign: 'center'
+                  }}>
+                    Question {refinementAnswers.length + 1} of 3
+                  </div>
                   <div style={{
                     fontSize: '16px',
                     fontWeight: '400',
@@ -658,32 +969,35 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
                     {currentQuestion.question}
                   </div>
 
-                  {/* Likert Scale - Horizontal */}
+                  {/* Likert Scale - Horizontal 7-point */}
                   {currentQuestion.type === 'likert' ? (
                     <div style={{
-                      maxWidth: '800px',
+                      maxWidth: '900px',
                       margin: '0 auto'
                     }}>
                       {/* Labels Row */}
                       <div style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(5, 1fr)',
-                        gap: '12px',
+                        gridTemplateColumns: 'repeat(7, 1fr)',
+                        gap: '8px',
                         marginBottom: '12px'
                       }}>
                         {[
-                          'Strongly Disagree',
-                          'Disagree',
+                          'Not Satisfied At All',
+                          'Not Satisfied',
+                          'Mildly Unsatisfied',
                           'Neutral',
-                          'Agree',
-                          'Strongly Agree'
+                          'Mildly Satisfied',
+                          'Satisfied',
+                          'Very Satisfied'
                         ].map((label, idx) => (
                           <div key={idx} style={{
-                            fontSize: '12px',
+                            fontSize: '11px',
                             color: '#6B7280',
                             textAlign: 'center',
                             fontFamily: 'Jost, sans-serif',
-                            fontWeight: '500'
+                            fontWeight: '500',
+                            lineHeight: '1.3'
                           }}>
                             {label}
                           </div>
@@ -693,51 +1007,66 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
                       {/* Radio Buttons Row */}
                       <div style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(5, 1fr)',
-                        gap: '12px',
+                        gridTemplateColumns: 'repeat(7, 1fr)',
+                        gap: '8px',
                         marginBottom: '8px'
                       }}>
-                        {[1, 2, 3, 4, 5].map((value) => (
-                          <div key={value} style={{
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center'
-                          }}>
-                            <button
-                              onClick={() => handleLikertResponse(
-                                value,
-                                ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'][value - 1]
-                              )}
-                              style={{
-                                width: '40px',
-                                height: '40px',
-                                borderRadius: '50%',
-                                border: '2px solid #D1D5DB',
-                                background: '#fff',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.borderColor = '#6366F1';
-                                e.currentTarget.style.background = '#EEF2FF';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.borderColor = '#D1D5DB';
-                                e.currentTarget.style.background = '#fff';
-                              }}
-                            >
-                              <div style={{
-                                width: '12px',
-                                height: '12px',
-                                borderRadius: '50%',
-                                background: '#D1D5DB'
-                              }} />
-                            </button>
-                          </div>
-                        ))}
+                        {[1, 2, 3, 4, 5, 6, 7].map((value) => {
+                          const labels = [
+                            'Not Satisfied At All',
+                            'Not Satisfied',
+                            'Mildly Unsatisfied',
+                            'Neutral',
+                            'Mildly Satisfied',
+                            'Satisfied',
+                            'Very Satisfied'
+                          ];
+                          
+                          return (
+                            <div key={value} style={{
+                              display: 'flex',
+                              justifyContent: 'center',
+                              alignItems: 'center'
+                            }}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  console.log('Likert clicked:', value, labels[value - 1]);
+                                  handleLikertResponse(value, labels[value - 1]);
+                                }}
+                                style={{
+                                  width: '40px',
+                                  height: '40px',
+                                  borderRadius: '50%',
+                                  border: '2px solid #D1D5DB',
+                                  background: '#fff',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  padding: 0
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.borderColor = '#6366F1';
+                                  e.currentTarget.style.background = '#EEF2FF';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.borderColor = '#D1D5DB';
+                                  e.currentTarget.style.background = '#fff';
+                                }}
+                              >
+                                <div style={{
+                                  width: '14px',
+                                  height: '14px',
+                                  borderRadius: '50%',
+                                  background: '#D1D5DB',
+                                  pointerEvents: 'none'
+                                }} />
+                              </button>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   ) : (
@@ -808,6 +1137,7 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
                     <button
                       onClick={() => {
                         setIsRefining(false);
+                        setRefinementMode(null);
                         setCurrentQuestion(null);
                         setRefinementAnswers([]);
                         setOpenEndedAnswer('');
@@ -825,11 +1155,142 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
                         letterSpacing: '0.5px'
                       }}
                     >
-                      Cancel Refinement
+                      Cancel
                     </button>
                   </div>
                 </div>
               ) : null}
+
+              {/* Direct Mode - Free Text Input */}
+              {refinementMode === 'direct' && !isLoadingQuestion ? (
+                <div style={{
+                  maxWidth: '700px',
+                  margin: '0 auto'
+                }}>
+                  <div style={{
+                    fontSize: '16px',
+                    fontWeight: '400',
+                    marginBottom: '16px',
+                    fontFamily: 'Jost, sans-serif',
+                    color: '#374151'
+                  }}>
+                    Tell us what you're looking for:
+                  </div>
+                  <textarea
+                    value={directRefinementInput}
+                    onChange={(e) => setDirectRefinementInput(e.target.value)}
+                    placeholder="E.g., 'I want something more casual', 'Looking for a darker color', 'Need something under $100'..."
+                    style={{
+                      width: '100%',
+                      minHeight: '120px',
+                      padding: '16px',
+                      fontSize: '15px',
+                      border: '2px solid #D1D5DB',
+                      borderRadius: '4px',
+                      fontFamily: 'Jost, sans-serif',
+                      outline: 'none',
+                      transition: 'border-color 0.2s',
+                      resize: 'vertical'
+                    }}
+                    onFocus={(e) => e.currentTarget.style.borderColor = '#6366F1'}
+                    onBlur={(e) => e.currentTarget.style.borderColor = '#D1D5DB'}
+                  />
+                  <div style={{
+                    display: 'flex',
+                    gap: '12px',
+                    marginTop: '16px',
+                    justifyContent: 'center'
+                  }}>
+                    <button
+                      onClick={handleDirectRefinement}
+                      disabled={!directRefinementInput.trim()}
+                      style={{
+                        padding: '14px 40px',
+                        fontSize: '14px',
+                        color: '#fff',
+                        background: directRefinementInput.trim() ? '#6366F1' : '#D1D5DB',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: directRefinementInput.trim() ? 'pointer' : 'not-allowed',
+                        fontWeight: '500',
+                        fontFamily: 'Jost, sans-serif',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                        transition: 'background 0.2s'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (directRefinementInput.trim()) {
+                          e.currentTarget.style.background = '#4F46E5';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (directRefinementInput.trim()) {
+                          e.currentTarget.style.background = '#6366F1';
+                        }
+                      }}
+                    >
+                      Get Refined Results
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsRefining(false);
+                        setRefinementMode(null);
+                        setDirectRefinementInput('');
+                      }}
+                      style={{
+                        padding: '14px 32px',
+                        fontSize: '13px',
+                        color: '#666',
+                        background: 'transparent',
+                        border: '1px solid #E5E7EB',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontFamily: 'Jost, sans-serif',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px'
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Direct Mode - Loading */}
+              {refinementMode === 'direct' && isLoadingQuestion ? (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '40px',
+                  color: '#666',
+                  fontFamily: 'Jost, sans-serif'
+                }}>
+                  <div style={{ fontSize: '16px', marginBottom: '12px' }}>
+                    Finding products that match your request...
+                  </div>
+                  <div style={{ fontSize: '24px' }}>🔍</div>
+                </div>
+              ) : null}
+
+              {/* Back to Mode Selection */}
+              {refinementMode && !isLoadingQuestion && !currentQuestion && (
+                <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                  <button
+                    onClick={() => setRefinementMode(null)}
+                    style={{
+                      padding: '8px 20px',
+                      fontSize: '12px',
+                      color: '#6366F1',
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontFamily: 'Jost, sans-serif',
+                      textDecoration: 'underline'
+                    }}
+                  >
+                    ← Choose different method
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
