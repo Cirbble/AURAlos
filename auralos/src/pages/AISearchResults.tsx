@@ -29,28 +29,18 @@ interface LikertResponse {
 // Predetermined bank of Likert questions
 const LIKERT_QUESTION_BANK: RefinementQuestion[] = [
   {
-    metric: 'style_satisfaction',
-    question: 'How satisfied are you with the overall style of the recommendations?',
+    metric: 'overall_satisfaction',
+    question: 'How satisfied are you with these recommendations overall?',
     type: 'likert'
   },
   {
-    metric: 'color_match',
-    question: 'How well do the color options match what you were looking for?',
+    metric: 'style_match',
+    question: 'How well do these products match your style preferences?',
     type: 'likert'
   },
   {
-    metric: 'price_range',
-    question: 'How satisfied are you with the price range of these products?',
-    type: 'likert'
-  },
-  {
-    metric: 'versatility',
-    question: 'How versatile are these products for different occasions?',
-    type: 'likert'
-  },
-  {
-    metric: 'material_quality',
-    question: 'How satisfied are you with the material and quality shown?',
+    metric: 'price_satisfaction',
+    question: 'Are you satisfied with the price range shown?',
     type: 'likert'
   }
 ];
