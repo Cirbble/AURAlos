@@ -546,7 +546,7 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
    - **EVERY productName MUST include (Color) in parentheses** - NO EXCEPTIONS
    - productName MUST be EXACTLY as it appears in the knowledge base - DO NOT shorten or modify
    - Example: "Samuel (Dark Green)" NOT "Samuel" or "Samuel Green" or "Samuel (Green)"
-   - Example: "Blyth (Brown)" NOT "Blyth" or "Brown Blyth" 
+   - Example: "Blyth (Brown)" NOT "Blyth" or "Brown Blyth"
    - Example: "Snakesa (Black Gold Multi)" NOT "Snakesa (Multi)" or "Snakesa"
    - Example: "Miyabell (Other Brown)" NOT "Miyabell" or "Miyabell Brown"
    - Example: "Miyabell (Print)" NOT "Miyabell" or "Miyabell Print"
