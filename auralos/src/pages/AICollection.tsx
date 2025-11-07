@@ -30,36 +30,11 @@ export default function AICollection() {
   const [userInput, setUserInput] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [isFocused, setIsFocused] = useState(false);
-
-  const placeholders = [
-    "black leather boots",
-    "white sneakers",
-    "heeled sandals",
-    "crossbody bags",
-    "ankle boots",
-    "loafers",
-    "platform heels",
-    "tote bags",
-    "mules",
-    "oxfords"
-  ];
-
-  const [placeholderIndex, setPlaceholderIndex] = useState(0);
 
   // Auto-scroll to bottom of chat
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-
-  // Carousel animation
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setPlaceholderIndex(prev => (prev + 1) % placeholders.length);
-    }, 2500);
-
-    return () => clearInterval(interval);
-  }, [placeholders.length]);
 
   const handleImageUpload = async (files: File[]) => {
     setError(null);
@@ -180,444 +155,353 @@ export default function AICollection() {
 
   return (
     <main>
-      {/* Hero Section */}
-      <section style={{ padding: '0', margin: '0' }}>
+      {/* Hero Section - New Layout */}
+      <section style={{ 
+        padding: '0', 
+        margin: '0',
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#fff'
+      }}>
         <div style={{
-          maxWidth: '100%',
-          margin: '0 auto',
-          padding: '80px 80px 60px 80px',
-          textAlign: 'center'
+          maxWidth: '1400px',
+          width: '100%',
+          padding: '0 80px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '60px'
         }}>
-          <h1 style={{
-            fontSize: '60px',
-            fontWeight: '500',
-            fontFamily: 'Jost, sans-serif',
-            letterSpacing: '0.05px',
-            lineHeight: '64px',
-            color: '#000',
-            marginBottom: '20px'
-          }}>
-            Find Your <em style={{ fontStyle: 'italic' }}>Fit</em>
-          </h1>
-
-          {/* Interactive Search Bar with Carousel */}
-          <div style={{
-            maxWidth: '600px',
-            margin: '0 auto 30px auto',
-            padding: '18px 24px',
-            border: `1px solid ${isFocused ? '#000' : '#ddd'}`,
-            backgroundColor: '#fff',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            transition: 'border-color 0.2s ease'
-          }}>
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#999"
-              strokeWidth="2"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
-            </svg>
-            <span style={{
+          
+          {/* Top: Find Your Fit Tagline */}
+          <div style={{ textAlign: 'center' }}>
+            <h1 style={{
+              fontSize: '72px',
+              fontWeight: '500',
               fontFamily: 'Jost, sans-serif',
-              fontSize: '16px',
-              color: '#999',
-              whiteSpace: 'nowrap'
+              letterSpacing: '0.05px',
+              lineHeight: '80px',
+              color: '#000',
+              margin: '0'
             }}>
-              Searching for
-            </span>
-            <div style={{
-              position: 'relative',
-              flex: 1,
-              minWidth: 0,
-              height: '24px',
-              overflow: 'hidden'
-            }}>
-              <div style={{
-                position: 'relative',
-                width: '100%',
-                height: '100%'
-              }}>
-                {placeholders.map((placeholder, idx) => {
-                  // Calculate position for continuous upward rotation
-                  let position = idx - placeholderIndex;
-
-                  // Wrap around: if item is "behind", show it below waiting
-                  if (position < 0) {
-                    position += placeholders.length;
-                  }
-
-                  // Determine opacity for smooth transitions
-                  let opacity = 0;
-                  if (position === 0) opacity = 1; // Current item
-                  if (position === placeholders.length - 1) opacity = 0.3; // Item coming from below
-
-                  return (
-                    <input
-                      key={idx}
-                      type="text"
-                      value={textPrompt}
-                      onChange={(e) => setTextPrompt(e.target.value)}
-                      onFocus={() => setIsFocused(true)}
-                      onBlur={() => setIsFocused(false)}
-                      placeholder={placeholder}
-                      disabled={idx !== placeholderIndex}
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        border: 'none',
-                        outline: 'none',
-                        fontFamily: 'Jost, sans-serif',
-                        fontSize: '16px',
-                        color: '#000',
-                        fontWeight: '500',
-                        backgroundColor: 'transparent',
-                        pointerEvents: idx === placeholderIndex ? 'auto' : 'none',
-                        transform: `translateY(${position * 100}%)`,
-                        transition: 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.5s ease',
-                        opacity: opacity
-                      }}
-                    />
-                  );
-                })}
-              </div>
-            </div>
+              Find Your <em style={{ fontStyle: 'italic' }}>Fit</em>
+            </h1>
           </div>
 
-          <style>{`
-            input::placeholder {
-              color: #000;
-              opacity: 1;
-              transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            }
-          `}</style>
-
-          <p style={{
-            fontSize: '18px',
-            color: '#000',
-            lineHeight: '26px',
-            maxWidth: '700px',
-            margin: '0 auto 30px',
-            fontWeight: '400',
-            fontFamily: 'Jost, sans-serif'
-          }}>
-            Upload an image and discover products that match your style. Our AI helps you find exactly what you're looking for.
-          </p>
-
-          {/* Search Button for Text-Only Search */}
-          {textPrompt.trim() && !selectedImage && (
-            <div style={{ textAlign: 'center' }}>
-              <button
-                onClick={handleStartSearch}
-                disabled={isLoading}
-                style={{
-                  padding: '16px 60px',
-                  backgroundColor: isLoading ? '#999' : '#000',
-                  color: '#fff',
-                  border: 'none',
-                  cursor: isLoading ? 'not-allowed' : 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  fontFamily: 'Jost, sans-serif',
-                  letterSpacing: '0.5px',
-                  textTransform: 'uppercase',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  if (!isLoading) e.currentTarget.style.backgroundColor = '#333';
-                }}
-                onMouseLeave={(e) => {
-                  if (!isLoading) e.currentTarget.style.backgroundColor = '#000';
-                }}
-              >
-                {isLoading ? 'Searching...' : 'Search'}
-              </button>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Main Content */}
-      {stage === 'input' && (
-        <section style={{
-          padding: '0',
-          margin: '0',
-          backgroundColor: '#fff'
-        }}>
+          {/* Bottom: Image Upload (Left) and Search (Right) */}
           <div style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '100px',
             width: '100%',
-            padding: '0 80px 80px 80px',
-            margin: '0'
+            maxWidth: '1400px',
+            justifyContent: 'space-between'
           }}>
+            
+            {/* Left: Image Upload Section - Larger */}
+            <div style={{ flex: '2', maxWidth: '600px' }}>
             <div style={{
-              maxWidth: '800px',
-              margin: '0 auto'
+              border: '2px dashed #000',
+              borderRadius: '16px',
+              padding: '80px 60px',
+              backgroundColor: '#fff',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              textAlign: 'center',
+              minHeight: '400px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center'
+            }}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.currentTarget.style.backgroundColor = '#f8f9fa';
+              e.currentTarget.style.borderColor = '#333';
+            }}
+            onDragLeave={(e) => {
+              e.preventDefault();
+              e.currentTarget.style.backgroundColor = '#fff';
+              e.currentTarget.style.borderColor = '#000';
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              e.currentTarget.style.backgroundColor = '#fff';
+              e.currentTarget.style.borderColor = '#000';
+              const files = Array.from(e.dataTransfer.files);
+              const imageFiles = files.filter(file => file.type.startsWith('image/'));
+              if (imageFiles.length > 0) {
+                handleImageUpload(imageFiles);
+              }
+            }}
+            onClick={() => document.getElementById('imageUpload')?.click()}
+            onMouseEnter={(e) => {
+              if (!selectedImage) {
+                e.currentTarget.style.backgroundColor = '#f8f9fa';
+                e.currentTarget.style.borderColor = '#333';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!selectedImage) {
+                e.currentTarget.style.backgroundColor = '#fff';
+                e.currentTarget.style.borderColor = '#000';
+              }
+            }}
+            >
+              {selectedImage ? (
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '20px'
+                }}>
+                  <img
+                    src={selectedImage}
+                    alt="Uploaded preview"
+                    style={{
+                      width: '100%',
+                      maxWidth: '350px',
+                      height: 'auto',
+                      borderRadius: '12px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                    }}
+                  />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedImage(null);
+                      setSelectedFile(null);
+                      setError(null);
+                    }}
+                    style={{
+                      padding: '10px 24px',
+                      border: '1px solid #000',
+                      backgroundColor: 'transparent',
+                      color: '#000',
+                      fontFamily: 'Jost, sans-serif',
+                      fontSize: '12px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      letterSpacing: '0.5px',
+                      textTransform: 'uppercase',
+                      borderRadius: '4px',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#000';
+                      e.currentTarget.style.color = '#fff';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.color = '#000';
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '20px'
+                }}>
+                  <svg
+                    width="72"
+                    height="72"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#000"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                  <div>
+                    <p style={{
+                      fontSize: '24px',
+                      fontWeight: '500',
+                      color: '#000',
+                      marginBottom: '12px',
+                      fontFamily: 'Jost, sans-serif'
+                    }}>
+                      Upload Image
+                    </p>
+                    <p style={{
+                      fontSize: '16px',
+                      color: '#666',
+                      fontFamily: 'Jost, sans-serif',
+                      margin: '0'
+                    }}>
+                      Drag & drop or click to browse
+                    </p>
+                  </div>
+                </div>
+              )}
+              <input
+                type="file"
+                id="imageUpload"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || []);
+                  if (files.length > 0) {
+                    handleImageUpload(files);
+                  }
+                }}
+              />
+            </div>
+            
+            {error && (
+              <p style={{
+                fontSize: '12px',
+                color: '#ef4444',
+                marginTop: '12px',
+                fontFamily: 'Jost, sans-serif',
+                textAlign: 'center'
+              }}>
+                {error}
+              </p>
+            )}
+          </div>
+
+            {/* Right: Search Bar and Button */}
+            <div style={{ 
+              flex: '1', 
+              display: 'flex', 
+              flexDirection: 'column',
+              alignItems: 'stretch', 
+              gap: '24px',
+              maxWidth: '450px',
+              marginTop: '40px'
             }}>
-              {/* Image Upload Section */}
               <div style={{
-                border: '1px solid #000',
-                padding: '80px 60px',
-                backgroundColor: '#fff',
-                cursor: 'pointer',
-                transition: 'background-color 0.2s ease'
-              }}
-              onDragOver={(e) => {
-                e.preventDefault();
-                e.currentTarget.style.backgroundColor = '#fafafa';
-              }}
-              onDragLeave={(e) => {
-                e.preventDefault();
-                e.currentTarget.style.backgroundColor = '#fff';
-              }}
-              onDrop={(e) => {
-                e.preventDefault();
-                e.currentTarget.style.backgroundColor = '#fff';
-                const files = Array.from(e.dataTransfer.files);
-                const imageFiles = files.filter(file => file.type.startsWith('image/'));
-                if (imageFiles.length > 0) {
-                  handleImageUpload(imageFiles);
-                }
-              }}
-              onClick={() => document.getElementById('imageUpload')?.click()}
-              >
-                {selectedImage ? (
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '24px'
-                  }}>
-                    <img
-                      src={selectedImage}
-                      alt="Uploaded preview"
-                      style={{
-                        width: '100%',
-                        maxWidth: '400px',
-                        height: 'auto'
-                      }}
-                    />
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedImage(null);
-                        setSelectedFile(null);
-                        setError(null);
-                      }}
-                      style={{
-                        padding: '14px 48px',
-                        border: '1px solid #000',
-                        backgroundColor: '#000',
-                        color: '#fff',
-                        fontFamily: 'Jost, sans-serif',
-                        fontSize: '14px',
-                        fontWeight: '500',
-                        cursor: 'pointer',
-                        letterSpacing: '1px',
-                        textTransform: 'uppercase',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = '#fff';
-                        e.currentTarget.style.color = '#000';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = '#000';
-                        e.currentTarget.style.color = '#fff';
-                      }}
-                    >
-                      Remove Image
-                    </button>
-                    {isLoading && (
-                      <div style={{
-                        fontFamily: 'Jost, sans-serif',
-                        fontSize: '15px',
-                        color: '#666'
-                      }}>
-                        Processing...
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '24px'
-                  }}>
-                    <svg
-                      width="72"
-                      height="72"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="#000"
-                      strokeWidth="1"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                      <polyline points="17 8 12 3 7 8" />
-                      <line x1="12" y1="3" x2="12" y2="15" />
-                    </svg>
-                    <div style={{ textAlign: 'center' }}>
-                      <p style={{
-                        fontSize: '20px',
-                        fontWeight: '500',
-                        color: '#000',
-                        marginBottom: '10px',
-                        fontFamily: 'Jost, sans-serif',
-                        letterSpacing: '0.5px'
-                      }}>
-                        Drag and drop your image here
-                      </p>
-                      <p style={{
-                        fontSize: '15px',
-                        color: '#999',
-                        fontFamily: 'Jost, sans-serif'
-                      }}>
-                        or click to browse files
-                      </p>
-                    </div>
-                  </div>
-                )}
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px'
+              }}>
                 <input
-                  type="file"
-                  id="imageUpload"
-                  accept="image/*"
-                  style={{ display: 'none' }}
-                  onChange={(e) => {
-                    const files = Array.from(e.target.files || []);
-                    if (files.length > 0) {
-                      handleImageUpload(files);
+                  type="text"
+                  value={textPrompt}
+                  onChange={(e) => setTextPrompt(e.target.value)}
+                  placeholder="What are you looking for?"
+                  style={{
+                    flex: '1',
+                    padding: '20px 24px',
+                    fontSize: '16px',
+                    border: '2px solid #000',
+                    borderRadius: '8px',
+                    outline: 'none',
+                    fontFamily: 'Jost, sans-serif',
+                    backgroundColor: '#fff',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = '#333';
+                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(0,0,0,0.1)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = '#000';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleStartSearch();
                     }
                   }}
                 />
+                
+                {/* Fancy Search Button */}
+                <button
+                  onClick={handleStartSearch}
+                  disabled={isLoading || (!selectedImage && !textPrompt.trim())}
+                  style={{
+                    padding: '20px 32px',
+                    backgroundColor: (isLoading || (!selectedImage && !textPrompt.trim())) ? '#ccc' : '#000',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: (isLoading || (!selectedImage && !textPrompt.trim())) ? 'not-allowed' : 'pointer',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    fontFamily: 'Jost, sans-serif',
+                    letterSpacing: '0.5px',
+                    textTransform: 'uppercase',
+                    transition: 'all 0.3s ease',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    minWidth: '120px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isLoading && (selectedImage || textPrompt.trim())) {
+                      e.currentTarget.style.backgroundColor = '#333';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.3)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isLoading && (selectedImage || textPrompt.trim())) {
+                      e.currentTarget.style.backgroundColor = '#000';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }
+                  }}
+                >
+                  {isLoading ? (
+                    <>
+                      <div style={{
+                        width: '16px',
+                        height: '16px',
+                        border: '2px solid #fff',
+                        borderTop: '2px solid transparent',
+                        borderRadius: '50%',
+                        animation: 'spin 1s linear infinite'
+                      }} />
+                      Searching
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                      </svg>
+                      Search
+                    </>
+                  )}
+                </button>
               </div>
-
-              {error && (
-                <p style={{
-                  fontSize: '13px',
-                  color: '#ef4444',
-                  marginTop: '16px',
-                  fontFamily: 'Jost, sans-serif',
-                  textAlign: 'left'
-                }}>
-                  {error}
-                </p>
-              )}
-
-              <p style={{
-                fontSize: '13px',
-                color: '#999',
-                marginTop: '16px',
-                fontFamily: 'Jost, sans-serif',
-                textAlign: 'left',
-                letterSpacing: '0.3px'
-              }}>
-                Supported formats: JPG, PNG, GIF (max 5MB)
-              </p>
-            </div>
-
-            {/* OR Divider */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '20px',
-              maxWidth: '800px',
-              margin: '40px auto'
-            }}>
-              <div style={{ flex: 1, height: '1px', backgroundColor: '#000' }} />
-              <span style={{
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#000',
-                fontFamily: 'Jost, sans-serif',
-                letterSpacing: '0.5px'
-              }}>
-                OR
-              </span>
-              <div style={{ flex: 1, height: '1px', backgroundColor: '#000' }} />
-            </div>
-
-            {/* Text Prompt Area */}
-            <div style={{
-              maxWidth: '800px',
-              margin: '0 auto'
-            }}>
-              <h3 style={{
-                fontSize: '18px',
-                marginBottom: '15px',
-                color: '#000',
-                fontFamily: 'Jost, sans-serif',
-                fontWeight: '500'
-              }}>
-                Describe What You're Looking For
-              </h3>
-              <textarea
-                value={textPrompt}
-                onChange={(e) => setTextPrompt(e.target.value)}
-                placeholder="E.g., 'Black leather ankle boots with a block heel, suitable for office wear, under $150'"
-                style={{
-                  width: '100%',
-                  minHeight: '120px',
-                  padding: '15px',
-                  fontSize: '16px',
-                  border: '1px solid #000',
-                  resize: 'vertical',
-                  fontFamily: 'Jost, sans-serif',
-                  outline: 'none',
-                  transition: 'border-color 0.3s'
-                }}
-                onFocus={(e) => e.currentTarget.style.borderColor = '#000'}
-                onBlur={(e) => e.currentTarget.style.borderColor = '#000'}
-              />
-            </div>
-
-            {/* Start Search Button */}
-            <div style={{
-              maxWidth: '800px',
-              margin: '30px auto 0'
-            }}>
-              <button
-                onClick={handleStartSearch}
-                disabled={isLoading || (!selectedImage && !textPrompt.trim())}
-                style={{
-                  width: '100%',
-                  padding: '18px',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  color: '#fff',
-                  backgroundColor: (isLoading || (!selectedImage && !textPrompt.trim())) ? '#999' : '#000',
-                  border: 'none',
-                  cursor: (isLoading || (!selectedImage && !textPrompt.trim())) ? 'not-allowed' : 'pointer',
-                  letterSpacing: '0.5px',
-                  textTransform: 'uppercase',
-                  fontFamily: 'Jost, sans-serif',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  if (!isLoading && (selectedImage || textPrompt.trim())) {
-                    e.currentTarget.style.backgroundColor = '#333';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isLoading && (selectedImage || textPrompt.trim())) {
-                    e.currentTarget.style.backgroundColor = '#000';
-                  }
-                }}
-              >
-                {isLoading ? 'Starting AI Search...' : 'Start AI Search'}
-              </button>
             </div>
           </div>
-        </section>
-      )}
+        </div>
+      </section>
+
+      {/* Add CSS for spinner animation */}
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
+
+
 
       {/* Conversation Stage */}
       {stage === 'conversation' && (
