@@ -131,9 +131,9 @@ export default function Header() {
                 src="/src/assets/monoo-logo.png" 
                 alt="Auralos" 
                 style={{ 
-                  height: '42px',
+                  height: '46px',
                   opacity: 0.9,
-                  marginTop: '-2px'
+                  marginTop: '-4px'
                 }} 
               />
             </Link>

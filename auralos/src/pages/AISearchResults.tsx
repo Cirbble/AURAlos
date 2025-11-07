@@ -936,58 +936,11 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
                   textAlign: 'center',
                   padding: '40px',
                   color: '#666',
-                  fontFamily: 'Jost, sans-serif',
-                  display: 'flex',
-                  justifyContent: 'center'
+                  fontFamily: 'Jost, sans-serif'
                 }}>
-                  <div style={{
-                    width: '40px',
-                    height: '40px',
-                    position: 'relative',
-                    animation: 'rotate 1.2s linear infinite'
-                  }}>
-                    <div style={{
-                      position: 'absolute',
-                      width: '8px',
-                      height: '8px',
-                      borderRadius: '50%',
-                      background: '#6366F1',
-                      top: '50%',
-                      left: '0',
-                      transform: 'translateY(-50%)',
-                      opacity: 0.9
-                    }} />
-                    <div style={{
-                      position: 'absolute',
-                      width: '8px',
-                      height: '8px',
-                      borderRadius: '50%',
-                      background: '#6366F1',
-                      top: '50%',
-                      right: '0',
-                      transform: 'translateY(-50%)',
-                      opacity: 0.6
-                    }} />
-                    <div style={{
-                      position: 'absolute',
-                      width: '8px',
-                      height: '8px',
-                      borderRadius: '50%',
-                      background: '#6366F1',
-                      top: '0',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      opacity: 0.3
-                    }} />
-                  </div>
+                  Loading...
                 </div>
               ) : null}
-              <style>{`
-                @keyframes rotate {
-                  0% { transform: rotate(0deg); }
-                  100% { transform: rotate(360deg); }
-                }
-              `}</style>
 
               {/* Guided Mode - Question */}
               {refinementMode === 'guided' && currentQuestion && !isLoadingQuestion ? (
@@ -1310,50 +1263,9 @@ CRITICAL: productName MUST include the color variant in parentheses exactly as i
                   textAlign: 'center',
                   padding: '40px',
                   color: '#666',
-                  fontFamily: 'Jost, sans-serif',
-                  display: 'flex',
-                  justifyContent: 'center'
+                  fontFamily: 'Jost, sans-serif'
                 }}>
-                  <div style={{
-                    width: '40px',
-                    height: '40px',
-                    position: 'relative',
-                    animation: 'rotate 1.2s linear infinite'
-                  }}>
-                    <div style={{
-                      position: 'absolute',
-                      width: '8px',
-                      height: '8px',
-                      borderRadius: '50%',
-                      background: '#6366F1',
-                      top: '50%',
-                      left: '0',
-                      transform: 'translateY(-50%)',
-                      opacity: 0.9
-                    }} />
-                    <div style={{
-                      position: 'absolute',
-                      width: '8px',
-                      height: '8px',
-                      borderRadius: '50%',
-                      background: '#6366F1',
-                      top: '50%',
-                      right: '0',
-                      transform: 'translateY(-50%)',
-                      opacity: 0.6
-                    }} />
-                    <div style={{
-                      position: 'absolute',
-                      width: '8px',
-                      height: '8px',
-                      borderRadius: '50%',
-                      background: '#6366F1',
-                      top: '0',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      opacity: 0.3
-                    }} />
-                  </div>
+                  Loading...
                 </div>
               ) : null}
 

@@ -882,59 +882,8 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                   if (!isLoading) e.currentTarget.style.backgroundColor = '#000';
                 }}
               >
-                {isLoading ? (
-            <div style={{
-                    width: '32px',
-                    height: '32px',
-                    position: 'relative',
-                    animation: 'rotate 1.2s linear infinite'
-                  }}>
-                    <div style={{
-                      position: 'absolute',
-                      width: '6px',
-                      height: '6px',
-                      borderRadius: '50%',
-                      background: '#fff',
-                      top: '50%',
-                      left: '0',
-                      transform: 'translateY(-50%)',
-                      opacity: 0.9
-                    }} />
-                    <div style={{
-                      position: 'absolute',
-                      width: '6px',
-                      height: '6px',
-                      borderRadius: '50%',
-                      background: '#fff',
-                      top: '50%',
-                      right: '0',
-                      transform: 'translateY(-50%)',
-                      opacity: 0.6
-                    }} />
-                    <div style={{
-                      position: 'absolute',
-                      width: '6px',
-                      height: '6px',
-                      borderRadius: '50%',
-                      background: '#fff',
-                      top: '0',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      opacity: 0.3
-                    }} />
-                  </div>
-                ) : (
-                  'Search'
-                )}
+                {isLoading ? 'Searching...' : 'Search'}
               </button>
-              {isLoading && (
-                <style>{`
-                  @keyframes rotate {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                  }
-                `}</style>
-              )}
             </div>
           )}
         </div>
@@ -1210,50 +1159,7 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                     }
                   }}
               >
-                {isLoading ? (
-                  <div style={{
-                    width: '32px',
-                    height: '32px',
-                    position: 'relative',
-                    animation: 'rotate 1.2s linear infinite'
-                  }}>
-                    <div style={{
-                      position: 'absolute',
-                      width: '6px',
-                      height: '6px',
-                      borderRadius: '50%',
-                      background: '#fff',
-                      top: '50%',
-                      left: '0',
-                      transform: 'translateY(-50%)',
-                      opacity: 0.9
-                    }} />
-                    <div style={{
-                      position: 'absolute',
-                      width: '6px',
-                      height: '6px',
-                      borderRadius: '50%',
-                      background: '#fff',
-                      top: '50%',
-                      right: '0',
-                      transform: 'translateY(-50%)',
-                      opacity: 0.6
-                    }} />
-                    <div style={{
-                      position: 'absolute',
-                      width: '6px',
-                      height: '6px',
-                      borderRadius: '50%',
-                      background: '#fff',
-                      top: '0',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      opacity: 0.3
-                    }} />
-                  </div>
-                ) : (
-                  'Start AI Search'
-                )}
+                {isLoading ? 'Searching...' : 'Start AI Search'}
                 </button>
           </div>
         </div>
@@ -1284,60 +1190,7 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
               marginBottom: '50px',
               fontFamily: 'Jost, sans-serif'
             }}>
-              {!bdaMetadata ? (
-                <span style={{ 
-                  display: 'flex', 
-                  flexDirection: 'column',
-                  alignItems: 'center', 
-                  gap: '16px',
-                  color: '#999',
-                  justifyContent: 'center'
-                }}>
-                  <div style={{
-                    width: '36px',
-                    height: '36px',
-                    position: 'relative',
-                    animation: 'rotate 1.2s linear infinite'
-                  }}>
-                    <div style={{
-                      position: 'absolute',
-                      width: '7px',
-                      height: '7px',
-                      borderRadius: '50%',
-                      background: '#999',
-                      top: '50%',
-                      left: '0',
-                      transform: 'translateY(-50%)',
-                      opacity: 0.9
-                    }} />
-                    <div style={{
-                      position: 'absolute',
-                      width: '7px',
-                      height: '7px',
-                      borderRadius: '50%',
-                      background: '#999',
-                      top: '50%',
-                      right: '0',
-                      transform: 'translateY(-50%)',
-                      opacity: 0.6
-                    }} />
-                    <div style={{
-                      position: 'absolute',
-                      width: '7px',
-                      height: '7px',
-                      borderRadius: '50%',
-                      background: '#999',
-                      top: '0',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      opacity: 0.3
-                    }} />
-                  </div>
-                  <span>Analyzing image</span>
-                </span>
-              ) : (
-                'Add any specifications or details to refine your search'
-              )}
+              {!bdaMetadata ? 'Analyzing image...' : 'Add any specifications or details to refine your search'}
             </p>
 
             {/* Main Layout: Image + Input */}
@@ -1493,50 +1346,7 @@ NOTICE: All productName values include (Color) - this is MANDATORY!
                     if (!isLoading) e.currentTarget.style.backgroundColor = '#000';
                   }}
                 >
-                    {isLoading ? (
-                      <div style={{
-                        width: '32px',
-                        height: '32px',
-                        position: 'relative',
-                        animation: 'rotate 1.2s linear infinite'
-                      }}>
-                        <div style={{
-                          position: 'absolute',
-                          width: '6px',
-                          height: '6px',
-                          borderRadius: '50%',
-                          background: '#fff',
-                          top: '50%',
-                          left: '0',
-                          transform: 'translateY(-50%)',
-                          opacity: 0.9
-                        }} />
-                        <div style={{
-                          position: 'absolute',
-                          width: '6px',
-                          height: '6px',
-                          borderRadius: '50%',
-                          background: '#fff',
-                          top: '50%',
-                          right: '0',
-                          transform: 'translateY(-50%)',
-                          opacity: 0.6
-                        }} />
-                        <div style={{
-                          position: 'absolute',
-                          width: '6px',
-                          height: '6px',
-                          borderRadius: '50%',
-                          background: '#fff',
-                          top: '0',
-                          left: '50%',
-                          transform: 'translateX(-50%)',
-                          opacity: 0.3
-                        }} />
-                      </div>
-                    ) : (
-                      'Find Products'
-                    )}
+                    {isLoading ? 'Searching...' : 'Find Products'}
                 </button>
               </div>
 
