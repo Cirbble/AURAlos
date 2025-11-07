@@ -75,50 +75,72 @@ export async function analyzeImageWithBDA(s3Key: string): Promise<BDAAnalysisRes
 async function analyzeWithClaudeVision(bucket: string, s3Key: string): Promise<BDAImageMetadata> {
   const { S3Client, GetObjectCommand } = await import('@aws-sdk/client-s3');
 
+  console.log('🔑 Checking AWS credentials...');
+  const accessKeyId = import.meta.env.VITE_AWS_ACCESS_KEY_ID;
+  const secretAccessKey = import.meta.env.VITE_AWS_SECRET_ACCESS_KEY;
+  const sessionToken = import.meta.env.VITE_AWS_SESSION_TOKEN;
+
+  if (!accessKeyId || !secretAccessKey) {
+    throw new Error('AWS credentials not configured. Please check .env file.');
+  }
+
+  console.log('✅ AWS credentials found');
+  console.log('📍 Region:', import.meta.env.VITE_AWS_REGION || 'us-east-1');
+
   const s3Client = new S3Client({
     region: import.meta.env.VITE_AWS_REGION || 'us-east-1',
     credentials: {
-      accessKeyId: import.meta.env.VITE_AWS_ACCESS_KEY_ID || '',
-      secretAccessKey: import.meta.env.VITE_AWS_SECRET_ACCESS_KEY || '',
-      sessionToken: import.meta.env.VITE_AWS_SESSION_TOKEN || undefined,
+      accessKeyId,
+      secretAccessKey,
+      sessionToken: sessionToken || undefined,
     },
   });
 
-  const getCommand = new GetObjectCommand({
-    Bucket: bucket,
-    Key: s3Key
-  });
+  console.log(`📥 Fetching image from S3: ${bucket}/${s3Key}`);
 
-  const response = await s3Client.send(getCommand);
+  try {
+    const getCommand = new GetObjectCommand({
+      Bucket: bucket,
+      Key: s3Key
+    });
 
-  if (!response.Body) {
-    throw new Error('No image data in S3 response');
-  }
+    const response = await s3Client.send(getCommand);
 
-  const chunks: Uint8Array[] = [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  for await (const chunk of response.Body as any) {
-    chunks.push(chunk);
-  }
+    if (!response.Body) {
+      throw new Error('No image data in S3 response');
+    }
 
-  const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
-  const imageData = new Uint8Array(totalLength);
-  let offset = 0;
-  for (const chunk of chunks) {
-    imageData.set(chunk, offset);
-    offset += chunk.length;
-  }
+    console.log('✅ Image fetched from S3');
+    console.log('📦 Converting image to base64...');
 
-  const base64Data = uint8ArrayToBase64(imageData);
+    const chunks: Uint8Array[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for await (const chunk of response.Body as any) {
+      chunks.push(chunk);
+    }
 
-  const payload = {
-    anthropic_version: "bedrock-2023-05-31",
-    max_tokens: 1000,
-    messages: [{
-      role: "user",
-      content: [
-        { type: "image", source: { type: "base64", media_type: "image/jpeg", data: base64Data }},
-        { type: "text", text: `Analyze this fashion product image and extract structured metadata.
+    const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+    const imageData = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const chunk of chunks) {
+      imageData.set(chunk, offset);
+      offset += chunk.length;
+    }
+
+    console.log(`✅ Image converted to base64 (${totalLength} bytes)`);
+
+    const base64Data = uint8ArrayToBase64(imageData);
+
+    console.log('🤖 Calling Claude Vision API...');
+
+    const payload = {
+      anthropic_version: "bedrock-2023-05-31",
+      max_tokens: 1000,
+      messages: [{
+        role: "user",
+        content: [
+          { type: "image", source: { type: "base64", media_type: "image/jpeg", data: base64Data }},
+          { type: "text", text: `Analyze this fashion product image and extract structured metadata.
 
 Return ONLY valid JSON with this exact structure:
 {
@@ -134,27 +156,57 @@ Return ONLY valid JSON with this exact structure:
 }
 
 Focus on visual details. Be specific and accurate.` }
-      ]
-    }]
-  };
+        ]
+      }]
+    };
 
-  const command = new InvokeModelCommand({
-    modelId: "anthropic.claude-3-sonnet-20240229-v1:0",
-    contentType: "application/json",
-    accept: "application/json",
-    body: JSON.stringify(payload)
-  });
+    const command = new InvokeModelCommand({
+      modelId: "anthropic.claude-3-sonnet-20240229-v1:0",
+      contentType: "application/json",
+      accept: "application/json",
+      body: JSON.stringify(payload)
+    });
 
-  const visionResponse = await runtimeClient.send(command);
-  const visionBody = JSON.parse(new TextDecoder().decode(visionResponse.body));
-  const text = visionBody.content[0].text;
+    const startTime = Date.now();
+    const visionResponse = await runtimeClient.send(command);
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error('No JSON found in Claude response');
+    console.log(`✅ Claude Vision responded in ${elapsed}s`);
+
+    const visionBody = JSON.parse(new TextDecoder().decode(visionResponse.body));
+    const text = visionBody.content[0].text;
+
+    console.log('📄 Claude response:', text.substring(0, 200) + '...');
+
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.error('❌ No JSON found in Claude response. Full response:', text);
+      throw new Error('No JSON found in Claude response');
+    }
+
+    const metadata = JSON.parse(jsonMatch[0]);
+    console.log('✅ Successfully parsed metadata:', metadata);
+
+    return metadata;
+
+  } catch (error) {
+    console.error('❌ Error in analyzeWithClaudeVision:', error);
+
+    // Provide more specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes('ExpiredToken') || error.message.includes('InvalidToken')) {
+        throw new Error('AWS session expired. Please refresh your credentials.');
+      } else if (error.message.includes('AccessDenied')) {
+        throw new Error('Access denied. Please check your AWS permissions.');
+      } else if (error.message.includes('NoSuchKey')) {
+        throw new Error(`Image not found in S3: ${s3Key}`);
+      } else if (error.message.includes('ThrottlingException')) {
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      }
+    }
+
+    throw error;
   }
-
-  return JSON.parse(jsonMatch[0]);
 }
 
 function uint8ArrayToBase64(bytes: Uint8Array): string {
